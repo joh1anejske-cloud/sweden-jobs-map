@@ -128,7 +128,8 @@ def salary(text, direct=""):
 def parse_date(s):
     if not s: return None
     try:
-        return datetime.fromisoformat(str(s).replace("Z","+00:00"))
+        d=datetime.fromisoformat(str(s).replace("Z","+00:00"))
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
     except:
         try: return datetime.strptime(str(s)[:10],"%Y-%m-%d").replace(tzinfo=timezone.utc)
         except: return None
