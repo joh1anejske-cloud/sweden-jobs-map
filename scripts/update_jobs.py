@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json, re, unicodedata
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -176,20 +177,30 @@ def dedupe(jobs):
         return d.timestamp() if d else 0
     return sorted(out,key=key,reverse=True)
 
+def search_one(q, source, url):
+    out=[]; errs=[]
+    for offset in (0,100):
+        try:
+            hits=parse_hits(fetch(url,q,offset))
+            for ad in hits:
+                j=normalize(ad,source)
+                if j: out.append(j)
+            if len(hits)<100: break
+        except Exception as e:
+            errs.append(f"{source}:{q}:{offset}:{type(e).__name__}")
+            break
+    return out,errs
+
 def main():
     jobs=[]; errors=[]
-    for q in ENGINEERING+HR:
-        for source,url in SOURCES:
-            for offset in (0,100):
-                try:
-                    hits=parse_hits(fetch(url,q,offset))
-                    for ad in hits:
-                        j=normalize(ad,source)
-                        if j: jobs.append(j)
-                    if len(hits)<100: break
-                except Exception as e:
-                    errors.append(f"{source}:{q}:{offset}:{type(e).__name__}")
-                    break
+    tasks=[(q,source,url) for q in ENGINEERING+HR for source,url in SOURCES]
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futs=[ex.submit(search_one,*t) for t in tasks]
+        for fut in as_completed(futs):
+            try:
+                j,e=fut.result(); jobs.extend(j); errors.extend(e)
+            except Exception as e:
+                errors.append("worker:"+type(e).__name__)
     jobs=dedupe(jobs)
     payload={"generated_at":datetime.now(timezone.utc).isoformat(),"count":len(jobs),"errors":errors[:50],"jobs":jobs}
     with open("jobs.json","w",encoding="utf-8") as f:
