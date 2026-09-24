@@ -42,7 +42,7 @@
 </header>
 <div class="wrap">
   <div class="toolbar">
-    <button id="refresh" class="primary">Vérifier les nouvelles offres</button>
+    <button id="refresh" class="primary">Actualiser maintenant</button>
     <button id="fit">Voir toute la Suède</button>
     <span id="status" class="status">Prêt.</span>
   </div>
@@ -73,7 +73,7 @@
     </aside>
   </div>
 
-  <div class="notice"><b>Couverture.</b> La recherche interroge les sources publiques JobTech de l'Arbetsförmedlingen : JobSearch/Platsbanken et JobAd Links. JobAd Links inclut aussi des annonces de job boards externes. L'application élargit la recherche avec plusieurs intitulés suédois et anglais, déduplique les résultats et écarte les postes seniors, managers, stages et annonces demandant clairement plus de 3 ans d'expérience. Aucune source ne peut garantir 100 % des offres publiées en Suède, mais cette combinaison donne une couverture nationale très large. Les salaires ne sont affichés que lorsqu'un montant est réellement présent dans les données de l'annonce.</div>
+  <div class="notice"><b>Couverture.</b> Le site est actualisé automatiquement toutes les 3 heures à partir des sources publiques JobTech de l'Arbetsförmedlingen : JobSearch/Platsbanken et JobAd Links. JobAd Links inclut aussi des annonces de job boards externes. L'application élargit la recherche avec plusieurs intitulés suédois et anglais, déduplique les résultats et écarte les postes seniors, managers, stages et annonces demandant clairement plus de 3 ans d'expérience. Aucune source ne peut garantir 100 % des offres publiées en Suède, mais cette combinaison donne une couverture nationale très large. Les salaires ne sont affichés que lorsqu'un montant est réellement présent dans les données de l'annonce.</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -289,9 +289,31 @@
   $("search").addEventListener("input",applyFilters);
   $("refresh").addEventListener("click",refresh);
   $("fit").addEventListener("click",()=>map.fitBounds(SWEDEN));
-  const cache=JSON.parse(localStorage.getItem("swedenJobsCache")||"[]");
-  if(Array.isArray(cache)&&cache.length){state.jobs=cache;render();$("status").textContent="Données mémorisées chargées. Clique pour vérifier les nouveautés.";}
-  else render();
+  async function loadAutomaticJobs(){
+    $("status").textContent="Chargement des offres mises à jour automatiquement…";
+    try{
+      const r=await fetch("jobs.json?ts="+Date.now(),{cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const data=await r.json();
+      const jobs=Array.isArray(data)?data:(Array.isArray(data.jobs)?data.jobs:[]);
+      if(!jobs.length) throw new Error("Aucune donnée");
+      state.jobs=jobs;
+      state.lastCheck=data.generated_at||new Date().toISOString();
+      localStorage.setItem("swedenJobsCache",JSON.stringify(jobs.slice(0,1500)));
+      localStorage.setItem("swedenJobsLastCheck",state.lastCheck);
+      render();
+      $("status").textContent="À jour automatiquement. Prochaine vérification sous 3 h maximum.";
+      return;
+    }catch(e){}
+    const cache=JSON.parse(localStorage.getItem("swedenJobsCache")||"[]");
+    if(Array.isArray(cache)&&cache.length){
+      state.jobs=cache; state.lastCheck=localStorage.getItem("swedenJobsLastCheck")||"";
+      render(); $("status").textContent="Données locales affichées — synchronisation automatique indisponible momentanément.";
+    }else{
+      render(); $("status").textContent="Synchronisation en cours. Réessaie dans quelques minutes.";
+    }
+  }
+  loadAutomaticJobs();
 })();
 </script>
 </body>
