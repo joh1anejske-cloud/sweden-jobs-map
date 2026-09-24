@@ -4,317 +4,117 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f7f5">
-  <title>Suède Jobs — Ingénierie & RH</title>
+  <title>Suède — Emplois, appartements & voitures</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>
-    :root{--bg:#f7f7f5;--card:#fff;--text:#171717;--muted:#6b7280;--line:#e5e7eb;--red:#dc2626;--redbg:#fee2e2;--green:#16803c;--greenbg:#dcfce7;--blue:#2563eb;--amber:#b45309}
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    header{padding:20px 16px 12px;max-width:1400px;margin:auto}.top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-    h1{font-size:clamp(24px,4vw,36px);margin:0 0 6px}.sub{color:var(--muted);max-width:850px;line-height:1.45}
-    .wrap{max-width:1400px;margin:auto;padding:0 16px 28px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-    button,select,input{font:inherit}button{border:1px solid var(--line);background:var(--card);padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:650}
-    button.primary{background:#111827;color:white;border-color:#111827}button:disabled{opacity:.55;cursor:wait}
-    .filters{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin:10px 0 12px}
-    .filters>*{border:1px solid var(--line);background:white;border-radius:10px;padding:10px 12px;min-width:0}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.stat{background:white;border:1px solid var(--line);border-radius:12px;padding:12px}.stat b{font-size:22px;display:block}.stat small{color:var(--muted)}
-    .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin:6px 0 10px}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px}
-    #map{height:560px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e5e7eb}
-    .main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr);gap:12px;align-items:start}
-    .side{background:white;border:1px solid var(--line);border-radius:14px;max-height:560px;overflow:auto}.sideHead{position:sticky;top:0;background:white;padding:12px;border-bottom:1px solid var(--line);z-index:2}
-    .jobs{padding:6px}.job{border:1px solid var(--line);border-radius:11px;padding:11px;margin:6px 0;cursor:pointer}.job:hover{border-color:#9ca3af}.job h3{font-size:15px;margin:0 0 5px}.meta{font-size:13px;color:var(--muted);line-height:1.4}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:700;margin:4px 4px 0 0}.red{background:var(--redbg);color:#991b1b}.green{background:var(--greenbg);color:#166534}.new{background:#dbeafe;color:#1d4ed8}.lang{background:#f3f4f6;color:#374151}.salary{background:#fef3c7;color:#92400e}
-    .notice{background:white;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;color:#4b5563;font-size:13px;line-height:1.45}.status{font-size:13px;color:var(--muted);margin-left:4px}
-    .popup h3{margin:0 0 5px;font-size:16px}.popup p{margin:5px 0;font-size:13px}.popup a{display:inline-block;margin-top:8px;font-weight:700;color:var(--blue)}
-    .empty{padding:18px;color:var(--muted);text-align:center}
-    @media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.main{grid-template-columns:1fr}#map{height:470px}.side{max-height:none}}
-    @media(max-width:480px){header,.wrap{padding-left:10px;padding-right:10px}.filters{grid-template-columns:1fr 1fr}#map{height:430px}.toolbar button{flex:1}.stat b{font-size:19px}}
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header>
-  <div class="top">
-    <div>
-      <h1>Suède Jobs — Ingénierie & RH</h1>
-      <div class="sub">Carte nationale des offres qui correspondent à vos deux profils. Rouge = ingénierie mécanique / production / méthodes / industrialisation. Vert = RH Bac+5 junior / début de carrière.</div>
-    </div>
-  </div>
+  <h1>Suède — Emplois, appartements & voitures</h1>
+  <div class="subtitle">Une seule carte pour préparer votre installation : emplois adaptés à vos deux profils, locations et voitures d’occasion dans toute la Suède.</div>
 </header>
-<div class="wrap">
+
+<main class="shell">
+  <nav class="tabs" aria-label="Sections">
+    <button class="tab active" data-tab="jobs">Emplois</button>
+    <button class="tab" data-tab="homes">Appartements</button>
+    <button class="tab" data-tab="cars">Voitures</button>
+  </nav>
+
+  <section id="panel-jobs" class="panel active">
+    <div class="filters">
+      <div class="field"><label>Profil</label><select id="jobProfile"><option value="">Tous</option><option value="eng">Moi — Ingénierie</option><option value="hr">Elle — RH</option></select></div>
+      <div class="field"><label>Fraîcheur</label><select id="jobFresh"><option value="">Toutes</option><option value="new">Nouvelles</option></select></div>
+      <div class="field"><label>Langue</label><select id="jobLanguage"><option value="">Toutes</option><option value="english">Anglais mentionné</option><option value="swedish">Suédois requis</option></select></div>
+      <div class="field"><label>Salaire</label><select id="jobSalary"><option value="">Indifférent</option><option value="yes">Salaire publié</option></select></div>
+      <div class="field"><label>Région</label><select id="jobRegion"><option value="">Toute la Suède</option></select></div>
+      <div class="field"><label>Recherche</label><input id="jobText" type="search" placeholder="Entreprise, poste, ville…"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="jTotal">0</b><small>offres actives</small></div>
+      <div class="stat"><b id="jEng">0</b><small>ingénierie</small></div>
+      <div class="stat"><b id="jHr">0</b><small>RH</small></div>
+      <div class="stat"><b id="jNew">0</b><small>nouvelles</small></div>
+    </div>
+    <div class="legend"><span><i class="dot" style="background:#dc2626"></i>Ingénierie</span><span><i class="dot" style="background:#16803c"></i>RH</span><span>Mise à jour : <b id="jobUpdated">NC</b></span></div>
+    <div class="section-note">Les offres sont actualisées automatiquement chaque heure. Les postes seniors, managers et demandes clairement supérieures à environ 3 ans d’expérience sont écartés.</div>
+  </section>
+
+  <section id="panel-homes" class="panel">
+    <div class="filters">
+      <div class="field"><label>Ville / zone</label><input id="homeArea" type="search" placeholder="Göteborg, Malmö, Stockholm…"></div>
+      <div class="field"><label>Type</label><select id="homeType"><option value="">Tous</option><option value="apartment">Appartement</option><option value="house">Maison</option><option value="room">Chambre</option><option value="other">Autre</option></select></div>
+      <div class="field"><label>Loyer min (SEK/mois)</label><input id="homePriceMin" type="number" min="0" step="500" placeholder="0"></div>
+      <div class="field"><label>Loyer max (SEK/mois)</label><input id="homePriceMax" type="number" min="0" step="500" placeholder="20000"></div>
+      <div class="field"><label>Pièces min</label><input id="homeRoomsMin" type="number" min="0" step="0.5" placeholder="1"></div>
+      <div class="field"><label>Pièces max</label><input id="homeRoomsMax" type="number" min="0" step="0.5" placeholder="5"></div>
+      <div class="field"><label>Surface min (m²)</label><input id="homeSqmMin" type="number" min="0" step="5" placeholder="25"></div>
+      <div class="field"><label>Surface max (m²)</label><input id="homeSqmMax" type="number" min="0" step="5" placeholder="120"></div>
+      <div class="field"><label>Meublé</label><select id="homeFurnished"><option value="">Indifférent</option><option value="yes">Oui</option><option value="no">Non</option></select></div>
+      <div class="field"><label>Animaux</label><select id="homePets"><option value="">Indifférent</option><option value="yes">Acceptés</option><option value="no">Non acceptés</option></select></div>
+      <div class="field"><label>1re main</label><select id="homeFirstHand"><option value="">Indifférent</option><option value="yes">Oui uniquement</option></select></div>
+      <div class="field"><label>Disponible au plus tard</label><input id="homeAvailable" type="date"></div>
+      <div class="field"><label>Fraîcheur</label><select id="homeFresh"><option value="">Toutes</option><option value="new">7 derniers jours</option></select></div>
+      <div class="field"><label>&nbsp;</label><button id="homeReset" class="action" type="button">Réinitialiser</button></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="hTotal">0</b><small>annonces chargées</small></div>
+      <div class="stat"><b id="hFound">0</b><small>selon tes critères</small></div>
+      <div class="stat"><b id="hMapped">0</b><small>localisables</small></div>
+      <div class="stat"><b id="hUpdated">NC</b><small>dernière collecte</small></div>
+    </div>
+    <div class="legend"><span><i class="dot" style="background:#7c3aed"></i>Zone de logement</span><span id="homeCoverage">Chargement…</span></div>
+    <div class="section-note">Les zones violettes sont volontairement approximatives : une plateforme de location peut masquer le numéro exact pour protéger le logement. Passe dessus ou touche la zone pour voir le loyer et les détails.</div>
+  </section>
+
+  <section id="panel-cars" class="panel">
+    <div class="filters compact">
+      <div class="field"><label>Modèle / mot-clé</label><input id="carQuery" type="search" placeholder="XC60, Golf, hybride…"></div>
+      <div class="field"><label>Marque</label><select id="carBrand"><option value="">Toutes</option><option>VOLVO</option><option>VOLKSWAGEN</option><option>BMW</option><option>AUDI</option><option>MERCEDES_BENZ</option><option>TOYOTA</option><option>FORD</option><option>KIA</option><option>HYUNDAI</option><option>SKODA</option><option>PEUGEOT</option><option>RENAULT</option><option>TESLA</option><option>SAAB</option><option>NISSAN</option><option>HONDA</option><option>MAZDA</option><option>OPEL</option><option>SEAT</option><option>SUBARU</option><option>SUZUKI</option><option>PORSCHE</option><option>POLESTAR</option><option>MG</option><option>CUPRA</option><option>LEXUS</option><option>MITSUBISHI</option><option>LAND_ROVER</option><option>JEEP</option><option>FIAT</option><option>CITROEN</option><option>DACIA</option></select></div>
+      <div class="field"><label>Région</label><select id="carRegion"><option value="">Toute la Suède</option><option value="STOCKHOLM">Stockholm</option><option value="VASTRA_GOTALAND">Västra Götaland</option><option value="SKANE">Skåne</option><option value="UPPSALA">Uppsala</option><option value="OSTERGOTLAND">Östergötland</option><option value="JONKOPING">Jönköping</option><option value="HALLAND">Halland</option><option value="OREBRO">Örebro</option><option value="SODERMANLAND">Södermanland</option><option value="VASTMANLAND">Västmanland</option><option value="DALARNA">Dalarna</option><option value="GAVLEBORG">Gävleborg</option><option value="VARMLAND">Värmland</option><option value="VASTERNORRLAND">Västernorrland</option><option value="JAMTLAND">Jämtland</option><option value="VASTERBOTTEN">Västerbotten</option><option value="NORRBOTTEN">Norrbotten</option><option value="KALMAR">Kalmar</option><option value="KRONOBERG">Kronoberg</option><option value="BLEKINGE">Blekinge</option><option value="GOTLAND">Gotland</option></select></div>
+      <div class="field"><label>Prix min (SEK)</label><input id="carPriceMin" type="number" min="0" step="5000" placeholder="50000"></div>
+      <div class="field"><label>Prix max (SEK)</label><input id="carPriceMax" type="number" min="0" step="5000" placeholder="250000"></div>
+      <div class="field"><label>Année min</label><input id="carYearMin" type="number" min="1950" max="2035" placeholder="2018"></div>
+      <div class="field"><label>Année max</label><input id="carYearMax" type="number" min="1950" max="2035" placeholder="2026"></div>
+      <div class="field"><label>Puissance min (ch)</label><input id="carHpMin" type="number" min="0" step="10" placeholder="100"></div>
+      <div class="field"><label>Puissance max (ch)</label><input id="carHpMax" type="number" min="0" step="10" placeholder="300"></div>
+      <div class="field"><label>Kilométrage min</label><input id="carMileageMin" type="number" min="0" step="500" placeholder="0"></div>
+      <div class="field"><label>Kilométrage max</label><input id="carMileageMax" type="number" min="0" step="500" placeholder="100000"></div>
+      <div class="field"><label>Boîte</label><select id="carTransmission"><option value="">Toutes</option><option value="AUTOMATIC">Automatique</option><option value="MANUAL">Manuelle</option></select></div>
+      <div class="field"><label>Transmission</label><select id="carDrive"><option value="">Toutes</option><option value="FWD">Traction</option><option value="RWD">Propulsion</option><option value="AWD">4 roues motrices</option></select></div>
+      <div class="field"><label>Tri</label><select id="carSort"><option value="PUBLISHED_DESC">Plus récentes</option><option value="PRICE_ASC">Prix croissant</option><option value="PRICE_DESC">Prix décroissant</option><option value="YEAR_DESC">Année décroissante</option><option value="MILEAGE_ASC">Kilométrage croissant</option></select></div>
+      <div class="field"><label>&nbsp;</label><button id="carSearchBtn" class="action primary" type="button">Rechercher les voitures</button></div>
+      <div class="field"><label>&nbsp;</label><button id="carReset" class="action" type="button">Réinitialiser</button></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="cTotal">0</b><small>annonces correspondantes</small></div>
+      <div class="stat"><b id="cFound">0</b><small>chargées</small></div>
+      <div class="stat"><b id="cMapped">0</b><small>localisables</small></div>
+      <div class="stat"><b>Blocket</b><small>source actuelle</small></div>
+    </div>
+    <div class="legend"><span><i class="dot" style="background:#2563eb"></i>Localisation disponible</span><span><i class="dot" style="background:#f59e0b"></i>Zone régionale approximative</span></div>
+    <div class="section-note">La recherche voitures est lancée à la demande pour appliquer directement tes critères. Si une annonce ne fournit pas de coordonnées précises, la carte affiche une zone régionale plutôt qu’un faux point exact.</div>
+  </section>
+
   <div class="toolbar">
-    <button id="refresh" class="primary">Actualiser maintenant</button>
-    <button id="fit">Voir toute la Suède</button>
-    <span id="status" class="status">Prêt.</span>
+    <button id="fitSweden" class="action" type="button">Voir toute la Suède</button>
+    <span id="globalStatus" class="status">Chargement…</span>
   </div>
 
-  <div class="filters">
-    <select id="profile"><option value="all">Tous les profils</option><option value="eng">Moi — Ingénierie</option><option value="hr">Elle — RH</option></select>
-    <select id="fresh"><option value="all">Toutes les offres</option><option value="new">Nouvelles seulement</option></select>
-    <select id="language"><option value="all">Toutes langues</option><option value="english">Anglais possible</option><option value="swedish">Suédois requis</option></select>
-    <select id="salary"><option value="all">Salaire indifférent</option><option value="yes">Salaire publié</option></select>
-    <select id="region"><option value="all">Toute la Suède</option></select>
-    <input id="search" type="search" placeholder="Entreprise, poste, ville…">
-  </div>
-
-  <div class="stats">
-    <div class="stat"><b id="sTotal">0</b><small>offres actives</small></div>
-    <div class="stat"><b id="sEng">0</b><small>ingénierie</small></div>
-    <div class="stat"><b id="sHr">0</b><small>RH</small></div>
-    <div class="stat"><b id="sNew">0</b><small>nouvelles depuis le précédent contrôle</small></div>
-  </div>
-
-  <div class="legend"><span><i class="dot" style="background:#dc2626"></i>Moi — ingénierie</span><span><i class="dot" style="background:#16803c"></i>Elle — RH</span><span>Dernière vérification : <b id="lastCheck">jamais</b></span></div>
-
-  <div class="main">
+  <div class="workspace">
     <div id="map"></div>
-    <aside class="side">
-      <div class="sideHead"><b id="countLabel">0 offre</b><div class="meta">Clique sur une offre pour la localiser.</div></div>
-      <div id="jobs" class="jobs"><div class="empty">Clique sur « Vérifier les nouvelles offres ».</div></div>
+    <aside class="results">
+      <div class="results-head"><b id="resultsTitle">Emplois</b><div id="resultsHint" class="meta">Offres adaptées à vos deux profils</div><div id="resultsCount" class="meta">0 résultat</div></div>
+      <div id="resultsList" class="results-list"><div class="empty">Chargement…</div></div>
     </aside>
   </div>
 
-  <div class="notice"><b>Couverture.</b> Le site est actualisé automatiquement toutes les 3 heures à partir des sources publiques JobTech de l'Arbetsförmedlingen : JobSearch/Platsbanken et JobAd Links. JobAd Links inclut aussi des annonces de job boards externes. L'application élargit la recherche avec plusieurs intitulés suédois et anglais, déduplique les résultats et écarte les postes seniors, managers, stages et annonces demandant clairement plus de 3 ans d'expérience. Aucune source ne peut garantir 100 % des offres publiées en Suède, mais cette combinaison donne une couverture nationale très large. Les salaires ne sont affichés que lorsqu'un montant est réellement présent dans les données de l'annonce.</div>
-</div>
+  <div class="notice"><b>Sources et couverture.</b> Emplois : données publiques JobTech/Arbetsförmedlingen. Appartements : annonces Qasa collectées automatiquement, avec localisation affichée sous forme de zone lorsqu’elle est approximative. Voitures : recherche via BlocketAPI, qui interroge les annonces Blocket. Les critères sont mémorisés localement sur ton appareil. Le site n’envoie aucune notification.</div>
+</main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-(() => {
-  const ENGINEERING_QUERIES = [
-    "maskiningenjör","mekanikingenjör","produktionsingenjör","produktionstekniker",
-    "manufacturing engineer","production engineer","mechanical engineer","industrial engineer",
-    "process engineer","metodingenjör","mekanikkonstruktör","manufacturing development"
-  ];
-  const HR_QUERIES = [
-    "HR specialist","HR generalist","HR coordinator","HR koordinator","People & Culture",
-    "People Operations","Talent Acquisition","rekryterare","HR administratör","Human Resources"
-  ];
-  const JS_API = "https://jobsearch.api.jobtechdev.se/search";
-  const JL_API = "https://links.api.jobtechdev.se/joblinks";
-  const SWEDEN = [[55.0,10.5],[69.2,24.5]];
-  const $ = id => document.getElementById(id);
-  const state = {jobs:[], filtered:[], markers:new Map(), seen:new Set(JSON.parse(localStorage.getItem("swedenJobsSeen")||"[]")), lastCheck:localStorage.getItem("swedenJobsLastCheck")||""};
-
-  const map = L.map("map",{minZoom:4}).fitBounds(SWEDEN);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);
-  const layer = L.layerGroup().addTo(map);
-
-  const esc = s => String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
-  const strip = s => String(s??"").replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
-  const norm = s => strip(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  const pick = (...v) => v.find(x => x!==undefined && x!==null && x!=="") ?? "";
-  const arr = x => Array.isArray(x)?x:[];
-  const formatDate = d => { if(!d) return "NC"; const x=new Date(d); return isNaN(x)?"NC":x.toLocaleDateString("fr-FR"); };
-  const ageText = d => { if(!d) return ""; const x=new Date(d); if(isNaN(x))return ""; const n=Math.max(0,Math.floor((Date.now()-x)/86400000)); return n===0?"aujourd'hui":n===1?"hier":"il y a "+n+" j"; };
-
-  function coordsOf(a){
-    const w=a.workplace_address||a.workplace||a.location||a.address||{};
-    let c=pick(w.coordinates,a.coordinates,a.location?.coordinates);
-    if(Array.isArray(c)&&c.length>=2){ const x=Number(c[0]),y=Number(c[1]); if(Math.abs(x)<=180&&Math.abs(y)<=90) return [y,x]; }
-    if(c&&typeof c==="object"){ const lat=Number(pick(c.lat,c.latitude,c.y)), lon=Number(pick(c.lon,c.lng,c.longitude,c.x)); if(isFinite(lat)&&isFinite(lon))return[lat,lon]; }
-    const lat=Number(pick(w.latitude,w.lat,a.latitude,a.lat)),lon=Number(pick(w.longitude,w.lon,w.lng,a.longitude,a.lon,a.lng));
-    return isFinite(lat)&&isFinite(lon)?[lat,lon]:null;
-  }
-
-  function salaryFrom(a,text){
-    const direct=pick(a.salary,a.salary_description,a.salary_text,a.compensation,a.salary_type?.label);
-    const t=strip(direct+" "+text);
-    const m=t.match(/(?:SEK|kr)\s*[\d .]{2,}(?:\s*[-–]\s*[\d .]{2,})?|[\d .]{2,}\s*(?:[-–]\s*[\d .]{2,}\s*)?(?:SEK|kr)(?:\s*\/\s*(?:månad|month|år|year))?/i);
-    return m?m[0].replace(/\s+/g," ").trim():"";
-  }
-
-  function languageFlag(text){
-    const t=norm(text);
-    const svReq=/(flytande|goda|mycket goda|excellent|fluent|professional).{0,25}(svenska|swedish)|(svenska|swedish).{0,25}(krav|required|obligatorisk|flytande|goda)/i.test(t);
-    const en=/(engelska|english)/i.test(t);
-    return svReq?"swedish":en?"english":"unknown";
-  }
-
-  function yearsTooHigh(text){
-    const t=norm(text);
-    const numeric=/(?:minst|minimum|at least|minimum of|mer an|more than)?\s*([4-9]|[1-9]\d)\s*\+?\s*(?:ar|ars|year|years)\s*(?:erfarenhet|experience)?/i;
-    const words=/(?:minst|at least|minimum)\s+(?:fyra|fem|sex|sju|atta|nio|tio|four|five|six|seven|eight|nine|ten)\s+(?:ar|years?)/i;
-    return numeric.test(t)||words.test(t);
-  }
-
-  function classify(title,text){
-    const t=norm(title+" "+text.slice(0,1500));
-    const tt=norm(title);
-    const hardReject=/(senior|principal|staff engineer|team lead|tech lead|engineering manager|hr manager|people manager|chef\b|head of|director|direktor|avdelningschef|gruppchef|projektchef|practice lead|expert lead)/i;
-    const internship=/(internship|intern\b|praktik|praktikant|studentjobb|student job|thesis|examensarbete)/i;
-    if(hardReject.test(tt)||internship.test(tt)||yearsTooHigh(text)) return null;
-
-    const engTitle=/(maskiningenjor|mekanikingenjor|produktionsingenjor|produktionstekniker|manufacturing engineer|production engineer|mechanical engineer|industrial engineer|process engineer|metodingenjor|mekanikkonstruktor|mechanical designer|manufacturing development)/i;
-    const hrTitle=/(^|\b)hr([ -]|$)|human resources|people\s*&?\s*culture|people operations|talent acquisition|rekryterare|recruiter|hr-koordinator|hr koordinator/i;
-
-    if(engTitle.test(tt)) return {profile:"eng",reason:"Intitulé directement lié à la mécanique, production, méthodes, process ou industrialisation."};
-    if(hrTitle.test(tt)) return {profile:"hr",reason:"Intitulé directement lié aux RH, People & Culture, recrutement ou People Operations."};
-    return null;
-  }
-
-  function normalizeAd(a,source){
-    const title=strip(pick(a.headline,a.title,a.label,a.position,a.job_title,a.occupation?.label));
-    const desc=strip(pick(a.description?.text,a.description?.text_formatted,a.description,a.summary,a.brief_description,a.body,a.text));
-    const fit=classify(title,desc);
-    if(!fit)return null;
-
-    const employer=a.employer||a.company||{};
-    const workplace=a.workplace_address||a.workplace||a.location||{};
-    const company=strip(pick(employer.name,employer.workplace,a.company_name,a.employer_name,a.organisation_name,a.organization_name,"Entreprise NC"));
-    const city=strip(pick(workplace.city,workplace.municipality,a.city,a.municipality,a.location_name));
-    const region=strip(pick(workplace.region,a.region,a.county,a.region_name));
-    const url=pick(a.webpage_url,a.application_details?.url,a.application_details?.information,a.application_url,a.source_url,a.url,a.link,a.original_url);
-    const published=pick(a.publication_date,a.published,a.publication_datetime,a.date,a.created_at);
-    const deadline=pick(a.application_deadline,a.deadline,a.last_application_date,a.valid_through);
-    const id=String(pick(a.id,a.external_id,a.original_id,a.ad_id,a.uuid,url,title+"|"+company+"|"+city));
-    const text=title+" "+desc;
-    const lang=languageFlag(text);
-    const salary=salaryFrom(a,desc);
-    const c=coordsOf(a);
-    const key=(source+"|"+id).toLowerCase();
-    return {key,id,source,title,desc,profile:fit.profile,reason:fit.reason,company,city,region,url,published,deadline,lang,salary,coords:c,new:!state.seen.has(key)};
-  }
-
-  function uniqueJobs(list){
-    const out=[],seen=new Set();
-    for(const j of list){
-      if(!j)continue;
-      const k=norm(j.url||"")+"|"+norm(j.title)+"|"+norm(j.company)+"|"+norm(j.city);
-      if(seen.has(k))continue; seen.add(k); out.push(j);
-    }
-    return out;
-  }
-
-  async function fetchJson(url){
-    const r=await fetch(url,{headers:{"Accept":"application/json"}});
-    if(!r.ok)throw new Error(r.status+" "+r.statusText);
-    return r.json();
-  }
-  function extractHits(json){ return arr(json?.hits?.hits).length?json.hits.hits.map(x=>x._source||x): arr(json?.hits).length?json.hits: arr(json?.results).length?json.results: arr(json?.joblinks).length?json.joblinks: arr(json?.ads).length?json.ads: arr(json?.items); }
-
-  async function querySource(base,q,source){
-    const all=[];
-    const offsets=source==="JobSearch"?[0,100,200]:[0,100];
-    for(const offset of offsets){
-      const u=new URL(base); u.searchParams.set("q",q); u.searchParams.set("limit","100"); u.searchParams.set("offset",String(offset));
-      try{
-        const json=await fetchJson(u.toString());
-        const hits=extractHits(json);
-        all.push(...hits);
-        if(hits.length<100)break;
-      }catch(e){ if(offset===0)throw e; break; }
-    }
-    return all.map(a=>normalizeAd(a,source)).filter(Boolean);
-  }
-
-  async function refresh(){
-    const btn=$("refresh"); btn.disabled=true; $("status").textContent="Recherche dans toute la Suède…";
-    const tasks=[];
-    for(const q of ENGINEERING_QUERIES){tasks.push(querySource(JS_API,q,"JobSearch"));tasks.push(querySource(JL_API,q,"JobAd Links"));}
-    for(const q of HR_QUERIES){tasks.push(querySource(JS_API,q,"JobSearch"));tasks.push(querySource(JL_API,q,"JobAd Links"));}
-    const results=await Promise.allSettled(tasks);
-    const ok=results.filter(r=>r.status==="fulfilled").flatMap(r=>r.value);
-    const failed=results.filter(r=>r.status==="rejected").length;
-    const jobs=uniqueJobs(ok).sort((a,b)=>new Date(b.published||0)-new Date(a.published||0));
-    if(jobs.length){
-      state.jobs=jobs;
-      localStorage.setItem("swedenJobsCache",JSON.stringify(jobs.slice(0,1500)));
-      const now=new Date().toISOString(); state.lastCheck=now; localStorage.setItem("swedenJobsLastCheck",now);
-      render();
-      const newCount=jobs.filter(j=>j.new).length;
-      $("status").textContent=newCount+" nouvelle"+(newCount>1?"s":"")+" offre"+(newCount>1?"s":"")+" trouvée"+(newCount>1?"s":"")+(failed?" • certaines requêtes ont échoué":"")+".";
-      state.seen=new Set(jobs.map(j=>j.key)); localStorage.setItem("swedenJobsSeen",JSON.stringify([...state.seen].slice(-5000)));
-    }else{
-      $("status").textContent="Aucune offre récupérée. Vérifie ta connexion puis réessaie."+(failed?" ("+failed+" requêtes en erreur)":"");
-    }
-    btn.disabled=false;
-  }
-
-  function popup(j){
-    const p=j.profile==="eng"?"🔴 Ingénierie":"🟢 RH";
-    const lang=j.lang==="swedish"?"Suédois requis détecté":j.lang==="english"?"Anglais mentionné":"Langue non déterminée";
-    return '<div class="popup"><h3>'+esc(j.title)+'</h3><p><b>'+esc(j.company)+'</b><br>'+esc([j.city,j.region].filter(Boolean).join(", ")||"Lieu NC")+'</p><p>'+p+' • '+esc(lang)+'</p><p>Publié : '+esc(formatDate(j.published))+(j.deadline?" • Limite : "+esc(formatDate(j.deadline)):"")+'</p><p>Salaire : <b>'+esc(j.salary||"Non communiqué")+'</b></p><p>'+esc(j.reason)+'</p>'+(j.url?'<a href="'+esc(j.url)+'" target="_blank" rel="noopener">Voir l’annonce originale ↗</a>':'')+'</div>';
-  }
-
-  function markerIcon(profile){
-    const color=profile==="eng"?"#dc2626":"#16803c";
-    return L.divIcon({className:"",html:'<div style="width:18px;height:18px;border-radius:50%;background:'+color+';border:3px solid white;box-shadow:0 1px 5px #0006"></div>',iconSize:[18,18],iconAnchor:[9,9]});
-  }
-
-  function populateRegions(){
-    const sel=$("region"),current=sel.value;
-    const regions=[...new Set(state.jobs.map(j=>j.region).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sv"));
-    sel.innerHTML='<option value="all">Toute la Suède</option>'+regions.map(r=>'<option>'+esc(r)+'</option>').join("");
-    if(regions.includes(current))sel.value=current;
-  }
-
-  function applyFilters(){
-    const profile=$("profile").value,fresh=$("fresh").value,language=$("language").value,salary=$("salary").value,region=$("region").value,q=norm($("search").value);
-    state.filtered=state.jobs.filter(j=>{
-      if(profile!=="all"&&j.profile!==profile)return false;
-      if(fresh==="new"&&!j.new)return false;
-      if(language!=="all"&&j.lang!==language)return false;
-      if(salary==="yes"&&!j.salary)return false;
-      if(region!=="all"&&j.region!==region)return false;
-      if(q&&!norm(j.title+" "+j.company+" "+j.city+" "+j.region).includes(q))return false;
-      return true;
-    });
-    draw();
-  }
-
-  function draw(){
-    layer.clearLayers(); state.markers.clear();
-    const jobs=$("jobs"); jobs.innerHTML="";
-    for(const j of state.filtered){
-      if(j.coords&&j.coords[0]>=54&&j.coords[0]<=70&&j.coords[1]>=10&&j.coords[1]<=25){
-        const m=L.marker(j.coords,{icon:markerIcon(j.profile)}).bindPopup(popup(j),{maxWidth:330}).addTo(layer);
-        state.markers.set(j.key,m);
-      }
-      const el=document.createElement("article"); el.className="job"; el.tabIndex=0;
-      el.innerHTML='<h3>'+esc(j.title)+'</h3><div class="meta"><b>'+esc(j.company)+'</b> • '+esc([j.city,j.region].filter(Boolean).join(", ")||"Lieu NC")+'<br>'+esc(formatDate(j.published))+(j.published?" ("+esc(ageText(j.published))+")":"")+'</div>'+
-        '<span class="tag '+(j.profile==="eng"?"red":"green")+'">'+(j.profile==="eng"?"Ingénierie":"RH")+'</span>'+
-        (j.new?'<span class="tag new">Nouveau</span>':'')+
-        '<span class="tag lang">'+(j.lang==="swedish"?"Suédois requis":j.lang==="english"?"Anglais mentionné":"Langue NC")+'</span>'+
-        (j.salary?'<span class="tag salary">'+esc(j.salary)+'</span>':'');
-      const go=()=>{const m=state.markers.get(j.key); if(m){map.setView(j.coords,10);m.openPopup();} else if(j.url){window.open(j.url,"_blank","noopener");}};
-      el.addEventListener("click",go);el.addEventListener("keydown",e=>{if(e.key==="Enter")go();});jobs.appendChild(el);
-    }
-    if(!state.filtered.length)jobs.innerHTML='<div class="empty">Aucune offre avec ces filtres.</div>';
-    $("countLabel").textContent=state.filtered.length+" offre"+(state.filtered.length>1?"s":"");
-    const t=state.jobs; $("sTotal").textContent=t.length;$("sEng").textContent=t.filter(j=>j.profile==="eng").length;$("sHr").textContent=t.filter(j=>j.profile==="hr").length;$("sNew").textContent=t.filter(j=>j.new).length;
-    $("lastCheck").textContent=state.lastCheck?new Date(state.lastCheck).toLocaleString("fr-FR"):"jamais";
-  }
-
-  function render(){populateRegions();applyFilters();}
-  ["profile","fresh","language","salary","region"].forEach(id=>$(id).addEventListener("change",applyFilters));
-  $("search").addEventListener("input",applyFilters);
-  $("refresh").addEventListener("click",refresh);
-  $("fit").addEventListener("click",()=>map.fitBounds(SWEDEN));
-  async function loadAutomaticJobs(){
-    $("status").textContent="Chargement des offres mises à jour automatiquement…";
-    try{
-      const r=await fetch("jobs.json?ts="+Date.now(),{cache:"no-store"});
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      const data=await r.json();
-      const jobs=Array.isArray(data)?data:(Array.isArray(data.jobs)?data.jobs:[]);
-      if(!jobs.length) throw new Error("Aucune donnée");
-      state.jobs=jobs;
-      state.lastCheck=data.generated_at||new Date().toISOString();
-      localStorage.setItem("swedenJobsCache",JSON.stringify(jobs.slice(0,1500)));
-      localStorage.setItem("swedenJobsLastCheck",state.lastCheck);
-      render();
-      $("status").textContent="À jour automatiquement. Prochaine vérification sous 3 h maximum.";
-      return;
-    }catch(e){}
-    const cache=JSON.parse(localStorage.getItem("swedenJobsCache")||"[]");
-    if(Array.isArray(cache)&&cache.length){
-      state.jobs=cache; state.lastCheck=localStorage.getItem("swedenJobsLastCheck")||"";
-      render(); $("status").textContent="Données locales affichées — synchronisation automatique indisponible momentanément.";
-    }else{
-      render(); $("status").textContent="Synchronisation en cours. Réessaie dans quelques minutes.";
-    }
-  }
-  loadAutomaticJobs();
-})();
-</script>
+<script src="app.js"></script>
 </body>
 </html>
