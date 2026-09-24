@@ -72,7 +72,7 @@ def parse_hits(data):
 def fetch(url, q, offset=0):
     params = urlencode({"q":q,"limit":100,"offset":offset})
     req = Request(url+"?"+params, headers={"Accept":"application/json","User-Agent":"SwedenJobsMap/1.0"})
-    with urlopen(req, timeout=30) as r:
+    with urlopen(req, timeout=12) as r:
         return json.loads(r.read().decode("utf-8"))
 
 def coords(ad):
@@ -179,7 +179,8 @@ def dedupe(jobs):
 
 def search_one(q, source, url):
     out=[]; errs=[]
-    for offset in (0,100):
+    offsets=(0,) if source=="JobAd Links" else (0,100)
+    for offset in offsets:
         try:
             hits=parse_hits(fetch(url,q,offset))
             for ad in hits:
@@ -194,7 +195,7 @@ def search_one(q, source, url):
 def main():
     jobs=[]; errors=[]
     tasks=[(q,source,url) for q in ENGINEERING+HR for source,url in SOURCES]
-    with ThreadPoolExecutor(max_workers=10) as ex:
+    with ThreadPoolExecutor(max_workers=20) as ex:
         futs=[ex.submit(search_one,*t) for t in tasks]
         for fut in as_completed(futs):
             try:
