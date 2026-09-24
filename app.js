@@ -6,7 +6,14 @@
   const strip = s => String(s == null ? "" : s).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
   const norm = s => strip(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const num = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
-  const money = v => { const n=num(v); return n==null?"NC":new Intl.NumberFormat("fr-FR").format(Math.round(n))+" SEK"; };
+  const moneySek = v => { const n=num(v); return n==null?"NC":new Intl.NumberFormat("fr-FR").format(Math.round(n))+" SEK"; };
+  const moneyEur = v => { const n=num(v); return n==null?"NC":new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0}).format(Math.round(n))+" €"; };
+  const money = v => {
+    const n=num(v);
+    if(n==null)return "NC";
+    const sek=moneySek(n);
+    return state.fxRate ? sek+" (~"+moneyEur(n*state.fxRate)+")" : sek;
+  };
   const fmtDate = d => { if(!d)return "NC"; const x=new Date(d); return isNaN(x)?"NC":x.toLocaleDateString("fr-FR"); };
   const daysOld = d => { const x=new Date(d); return isNaN(x)?9999:Math.max(0,(Date.now()-x.getTime())/86400000); };
   const boolLabel = v => v===true?"Oui":v===false?"Non":"NC";
@@ -21,7 +28,8 @@
     jobs:[], homes:[], cars:[], latestCars:[],
     filtered:[], layers:new Map(),
     jobsGenerated:"", homesGenerated:"",
-    carTotal:0
+    carTotal:0,
+    fxRate:null, fxDate:""
   };
 
   const COUNTY_CENTERS = {
@@ -91,6 +99,50 @@
       if(item.coords) map.setView(item.coords, item._approx?7:11);
       l.openPopup && l.openPopup();
     } else if(item.url) window.open(item.url,"_blank","noopener");
+  }
+
+
+  function updateFxDisplays(){
+    const txt=state.fxRate ? "1 SEK = "+state.fxRate.toFixed(4)+" €"+(state.fxDate?" • "+state.fxDate:"") : "Taux indisponible";
+    ["homeFxRate","carFxRate"].forEach(id=>{ if($(id))$(id).textContent=txt; });
+    [["homeFxSek","homeFxEur"],["carFxSek","carFxEur"]].forEach(([sekId,eurId])=>{
+      const sek=$(sekId),eur=$(eurId);
+      if(!sek||!eur||!state.fxRate)return;
+      if(sek.value!=="")eur.value=(Number(sek.value)*state.fxRate).toFixed(2);
+      else if(eur.value!=="")sek.value=(Number(eur.value)/state.fxRate).toFixed(0);
+    });
+  }
+  function bindFxPair(sekId,eurId){
+    const sek=$(sekId),eur=$(eurId);
+    if(!sek||!eur)return;
+    sek.addEventListener("input",()=>{
+      if(!state.fxRate){eur.value="";return;}
+      const v=Number(sek.value); eur.value=sek.value!==""&&Number.isFinite(v)?(v*state.fxRate).toFixed(2):"";
+    });
+    eur.addEventListener("input",()=>{
+      if(!state.fxRate){sek.value="";return;}
+      const v=Number(eur.value); sek.value=eur.value!==""&&Number.isFinite(v)?(v/state.fxRate).toFixed(0):"";
+    });
+  }
+  async function loadFx(){
+    try{
+      const r=await fetch("https://api.frankfurter.dev/v2/rate/sek/eur",{cache:"no-store"});
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      const d=await r.json();
+      const rate=Number(d.rate);
+      if(!Number.isFinite(rate)||rate<=0)throw new Error("Taux invalide");
+      state.fxRate=rate;
+      state.fxDate=d.date||new Date().toISOString().slice(0,10);
+      localStorage.setItem("sekEurRate",JSON.stringify({rate:state.fxRate,date:state.fxDate}));
+    }catch(e){
+      try{
+        const cached=JSON.parse(localStorage.getItem("sekEurRate")||"null");
+        if(cached&&Number(cached.rate)>0){state.fxRate=Number(cached.rate);state.fxDate=cached.date||"taux mémorisé";}
+      }catch(_){}
+    }
+    updateFxDisplays();
+    if(state.mode==="homes")applyHomeFilters();
+    if(state.mode==="cars")drawCars();
   }
 
   // ---------- JOBS ----------
@@ -359,6 +411,8 @@
   }
 
   // ---------- INIT ----------
+  bindFxPair("homeFxSek","homeFxEur");
+  bindFxPair("carFxSek","carFxEur");
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
   $("fitSweden").addEventListener("click",()=>map.fitBounds(SWEDEN));
   ["jobProfile","jobFresh","jobLanguage","jobSalary","jobRegion"].forEach(id=>$(id).addEventListener("change",applyJobFilters));
@@ -373,6 +427,6 @@
   $("carReset").addEventListener("click",()=>{carIds.forEach(id=>{if($(id))$(id).value="";});$("carSort").value="PUBLISHED_DESC";state.cars=[];state.carTotal=0;drawCars();});
   $("carQuery").addEventListener("keydown",e=>{if(e.key==="Enter")searchCars();});
 
-  Promise.allSettled([loadJobs(),loadHomes(),loadRecentCars()]).then(()=>{ if(state.mode==="jobs")applyJobFilters(); setStatus("Données chargées."); });
+  Promise.allSettled([loadJobs(),loadHomes(),loadRecentCars(),loadFx()]).then(()=>{ if(state.mode==="jobs")applyJobFilters(); setStatus("Données chargées."); });
   switchTab("jobs");
 })();
