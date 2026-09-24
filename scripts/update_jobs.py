@@ -188,7 +188,7 @@ def search_one(q, source, url):
                 if j: out.append(j)
             if len(hits)<100: break
         except Exception as e:
-            errs.append(f"{source}:{q}:{offset}:{type(e).__name__}")
+            errs.append(f"{source}:{q}:{offset}:{type(e).__name__}:{e}")
             break
     return out,errs
 
@@ -201,12 +201,12 @@ def main():
             try:
                 j,e=fut.result(); jobs.extend(j); errors.extend(e)
             except Exception as e:
-                errors.append("worker:"+type(e).__name__)
+                errors.append("worker:"+type(e).__name__+":"+str(e))
     jobs=dedupe(jobs)
     payload={"generated_at":datetime.now(timezone.utc).isoformat(),"count":len(jobs),"errors":errors[:50],"jobs":jobs}
     with open("jobs.json","w",encoding="utf-8") as f:
         json.dump(payload,f,ensure_ascii=False,separators=(",",":"))
-    print(f"Generated {len(jobs)} jobs; {len(errors)} query errors")
+    print(f"Generated {len(jobs)} jobs; {len(errors)} query errors")\n    for e in errors[:10]: print("ERROR",e)
 
 if __name__=="__main__":
     main()
