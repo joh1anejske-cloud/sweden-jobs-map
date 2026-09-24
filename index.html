@@ -59,6 +59,15 @@
       <div class="field"><label>Fraîcheur</label><select id="homeFresh"><option value="">Toutes</option><option value="new">7 derniers jours</option></select></div>
       <div class="field"><label>&nbsp;</label><button id="homeReset" class="action" type="button">Réinitialiser</button></div>
     </div>
+    <div class="fxbox">
+      <div class="fxhead"><b>Convertisseur SEK ↔ EUR</b><span id="homeFxRate">Taux en chargement…</span></div>
+      <div class="fxinputs">
+        <label><input id="homeFxSek" type="number" min="0" step="100" placeholder="10 000"><span>SEK</span></label>
+        <span class="fxeq">≈</span>
+        <label><input id="homeFxEur" type="number" min="0" step="10" placeholder="900"><span>EUR</span></label>
+      </div>
+      <div class="fxnote">Les loyers affichent aussi automatiquement leur équivalent en euros.</div>
+    </div>
     <div class="stats">
       <div class="stat"><b id="hTotal">0</b><small>annonces chargées</small></div>
       <div class="stat"><b id="hFound">0</b><small>selon tes critères</small></div>
@@ -87,6 +96,15 @@
       <div class="field"><label>Tri</label><select id="carSort"><option value="PUBLISHED_DESC">Plus récentes</option><option value="PRICE_ASC">Prix croissant</option><option value="PRICE_DESC">Prix décroissant</option><option value="YEAR_DESC">Année décroissante</option><option value="MILEAGE_ASC">Kilométrage croissant</option></select></div>
       <div class="field"><label>&nbsp;</label><button id="carSearchBtn" class="action primary" type="button">Rechercher les voitures</button></div>
       <div class="field"><label>&nbsp;</label><button id="carReset" class="action" type="button">Réinitialiser</button></div>
+    </div>
+    <div class="fxbox">
+      <div class="fxhead"><b>Convertisseur SEK ↔ EUR</b><span id="carFxRate">Taux en chargement…</span></div>
+      <div class="fxinputs">
+        <label><input id="carFxSek" type="number" min="0" step="1000" placeholder="100 000"><span>SEK</span></label>
+        <span class="fxeq">≈</span>
+        <label><input id="carFxEur" type="number" min="0" step="100" placeholder="9 000"><span>EUR</span></label>
+      </div>
+      <div class="fxnote">Les prix des voitures affichent aussi automatiquement leur équivalent en euros.</div>
     </div>
     <div class="stats">
       <div class="stat"><b id="cTotal">0</b><small>annonces correspondantes</small></div>
