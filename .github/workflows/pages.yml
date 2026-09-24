@@ -35,6 +35,9 @@ jobs:
       - name: Refresh recent car data
         run: python3 scripts/update_cars.py
 
+      - name: Validate browser JavaScript
+        run: node --check app.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
