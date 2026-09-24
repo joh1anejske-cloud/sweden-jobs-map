@@ -18,7 +18,7 @@
 
   const state = {
     mode:"jobs",
-    jobs:[], homes:[], cars:[],
+    jobs:[], homes:[], cars:[], latestCars:[],
     filtered:[], layers:new Map(),
     jobsGenerated:"", homesGenerated:"",
     carTotal:0
@@ -344,6 +344,20 @@
     btn.disabled=false;
   }
 
+  async function loadRecentCars(){
+    try{
+      const r=await fetch("cars_latest.json?ts="+Date.now(),{cache:"no-store"});
+      if(!r.ok)throw new Error();
+      const d=await r.json();
+      const docs=Array.isArray(d.docs)?d.docs:[];
+      const seen=new Set();
+      state.latestCars=docs.map(x=>normalizeCar(x,"")).filter(c=>{if(seen.has(c.id))return false;seen.add(c.id);return true;});
+      state.cars=state.latestCars.slice();
+      state.carTotal=num(d.total)||state.cars.length;
+      if(state.mode==="cars")drawCars();
+    }catch(e){}
+  }
+
   // ---------- INIT ----------
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
   $("fitSweden").addEventListener("click",()=>map.fitBounds(SWEDEN));
@@ -359,6 +373,6 @@
   $("carReset").addEventListener("click",()=>{carIds.forEach(id=>{if($(id))$(id).value="";});$("carSort").value="PUBLISHED_DESC";state.cars=[];state.carTotal=0;drawCars();});
   $("carQuery").addEventListener("keydown",e=>{if(e.key==="Enter")searchCars();});
 
-  Promise.allSettled([loadJobs(),loadHomes()]).then(()=>{ if(state.mode==="jobs")applyJobFilters(); setStatus("Données chargées."); });
+  Promise.allSettled([loadJobs(),loadHomes(),loadRecentCars()]).then(()=>{ if(state.mode==="jobs")applyJobFilters(); setStatus("Données chargées."); });
   switchTab("jobs");
 })();
