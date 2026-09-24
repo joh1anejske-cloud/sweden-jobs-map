@@ -29,6 +29,9 @@ jobs:
       - name: Refresh jobs data
         run: python3 scripts/update_jobs.py
 
+      - name: Refresh housing data
+        run: python3 scripts/update_housing.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
