@@ -206,7 +206,9 @@ def main():
     payload={"generated_at":datetime.now(timezone.utc).isoformat(),"count":len(jobs),"errors":errors[:50],"jobs":jobs}
     with open("jobs.json","w",encoding="utf-8") as f:
         json.dump(payload,f,ensure_ascii=False,separators=(",",":"))
-    print(f"Generated {len(jobs)} jobs; {len(errors)} query errors")\n    for e in errors[:10]: print("ERROR",e)
+    print(f"Generated {len(jobs)} jobs; {len(errors)} query errors")
+    for e in errors[:10]:
+        print("ERROR", e)
 
 if __name__=="__main__":
     main()
