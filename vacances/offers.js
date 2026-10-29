@@ -34,12 +34,18 @@ function external(){
    (filters.country?HUBS.filter(h=>h.country===filters.country).slice(0,3).map(h=>h.name):WORLD.map(h=>h.name));
  const places=choices.length?choices:[label];
  const links=[];
+ const selected=document.querySelector(".category.active")?.dataset?.kind||"hotel";
  for(const place of places){
-  links.push(["Hôtels · "+place,officialBooking(place)]);
-  links.push(["Locations · "+place,officialAirbnb(place)]);
-  links.push(["Vol + hôtel · "+place,travelSearch(place)]);
+  if(["hotel","all"].includes(selected))links.push(["Hôtels · "+place,officialBooking(place)]);
+  if(["rental","all"].includes(selected))links.push(["Locations · "+place,officialAirbnb(place)]);
+  if(["camping","other","all"].includes(selected)){
+   const type=selected==="other"?"auberges chambres d'hôtes":"camping";
+   const q=[type,place,filters.checkin,filters.checkout,filters.adults+" personnes"].join(" ");
+   links.push(["Hébergements · "+place,"https://www.google.com/search?q="+encodeURIComponent(q)]);
+  }
+  if(["hotel","all"].includes(selected))links.push(["Vol + hôtel · "+place,travelSearch(place)]);
  }
- if($("board").value==="all"){
+ if(["hotel","all"].includes(selected)&&$("board").value==="all"){
   links.push(["Tout compris · comparer",travelSearch(places[0])]);
  }
  const root=$("externalSearches");
@@ -104,6 +110,8 @@ function renderOffers(result){
 }
 async function search(){
  external();
+ const selectedKind=document.querySelector(".category.active")?.dataset?.kind||"hotel";
+ if(!["hotel","all"].includes(selectedKind)){status("Tarifs hôteliers uniquement","La connexion Nuitee ne couvre pas les campings ni les locations particulières. Utilisez les liens de recherche externes.","error");return;}
  const params=f(),button=$("quoteSearch");
  if(!params.checkin||!params.checkout||params.checkout<=params.checkin){
   status("Dates incohérentes","Le départ doit être postérieur à l'arrivée.","error");return;
@@ -141,6 +149,7 @@ async function search(){
  }finally{button.disabled=false;button.innerHTML="Vérifier les offres hôtelières <span>↗</span>";}
 }
 $("quoteSearch").addEventListener("click",search);
+document.querySelectorAll(".category").forEach(btn=>btn.addEventListener("click",external));
 ["country","destination","checkin","checkout","adults","budget","board","flight","airport"].forEach(id=>{
  const input=$(id);input.addEventListener("change",external);
 });
