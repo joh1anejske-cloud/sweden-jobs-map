@@ -50,7 +50,7 @@
   <div class="titleline"><span>02</span><h2>Prix et disponibilités pour vos dates</h2></div>
   <p class="quotes-intro">Recherche de prix réels par <strong>Nuitee / LiteAPI</strong> lorsque le serveur fournisseur est activé. Les résultats hôteliers, les vols et les forfaits complets sont identifiés séparément.</p>
   <div class="quote-banner" id="quoteBanner"><span class="quote-led"></span><div><strong id="quoteStatus">Connexion au fournisseur de tarifs non configurée</strong><small id="quoteSub">Les hôtels restent explorables sur la carte. Aucun tarif vérifié ne sera inventé.</small></div></div>
-  <div class="quote-controls"><button id="quoteSearch" type="button" class="primary">Vérifier les offres hôtelières <span>↗</span></button><div class="quote-hint" id="quoteHint">Avec « Vol inclus », les prix d’hôtel seuls ne sont pas comptabilisés comme des forfaits valides.</div></div>
+  <div class="quote-controls"><label class="quote-pin" id="quotePinWrap"><span>Accès privé aux tarifs</span><input id="quotePin" type="password" autocomplete="off" placeholder="Code personnel configuré sur le serveur"></label><button id="quoteSearch" type="button" class="primary">Vérifier les offres hôtelières <span>↗</span></button><div class="quote-hint" id="quoteHint">Avec « Vol inclus », les prix d’hôtel seuls ne sont pas comptabilisés comme des forfaits valides.</div></div>
   <div class="quote-results" id="quoteResults"><div class="quote-placeholder"><strong>Aucun tarif vérifié affiché.</strong> Les recherches externes ci-dessous permettent de vérifier les disponibilités directement sur les sites marchands en attendant la connexion API.</div></div>
   <div class="quote-external"><strong>Rechercher immédiatement sur les plateformes :</strong><div id="externalSearches"></div></div>
  </section>
@@ -68,6 +68,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./hubs.js"></script>
 <script src="./app.js"></script>
+<script src="./pricing-config.js"></script>
 <script src="./offers.js"></script>
 </body>
 </html>
