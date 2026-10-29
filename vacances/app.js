@@ -4,14 +4,16 @@ const $ = id => document.getElementById(id);
 const esc = val => String(val == null ? "" : val).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
 const CATEGORY = {hotel:"Hôtel",camping:"Camping",rental:"Location",other:"Autre"};
 const TOURISM = {hotel:"hotel",motel:"hotel",resort:"hotel",camp_site:"camping",caravan_site:"camping",apartment:"rental",chalet:"rental",guest_house:"other",hostel:"other",wilderness_hut:"other",holiday_village:"other"};
-const FIELDS = ["destination","checkin","checkout","adults","budget","airport","radius","stars","board","flight","pool","beach","sea"];
-const state = {kind:"hotel",place:"",center:null,items:[],pins:new Map(),lastUpdate:null,loading:false};
+const FIELDS = ["country","destination","checkin","checkout","adults","budget","airport","radius","stars","board","flight","pool","beach","sea"];
+const HUBS=(window.ESCAPADE_HUBS||[]).map(([name,country,lat,lon])=>({name,country,lat,lon}));
+const state = {kind:"hotel",place:"",center:null,items:[],pins:new Map(),lastUpdate:null,loading:false,worldSample:false,country:"",globalLoading:false};
 const map = L.map("map",{worldCopyJump:true,zoomControl:true,minZoom:2}).setView([20,0],2);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
  maxZoom:18
 }).addTo(map);
 const layers = L.layerGroup().addTo(map);
+const hubLayers = L.layerGroup().addTo(map);
 
 function safeURL(value){
  const s=String(value||"").trim();
@@ -30,14 +32,14 @@ function setBusy(on){
  if(on)setStatus("Chargement des hébergements dans cette zone…","busy");
 }
 function savedForm(){
- try{const old=JSON.parse(localStorage.getItem("escapade_preferences_v1")||"{}");
+ try{const old=JSON.parse(localStorage.getItem("escapade_preferences_v2")||"{}");
  FIELDS.forEach(id=>{if(old[id]===undefined)return;const e=$(id);if(e.type==="checkbox")e.checked=Boolean(old[id]);else e.value=old[id];});
  if(old.kind){state.kind=old.kind;document.querySelectorAll(".category").forEach(b=>b.classList.toggle("active",b.dataset.kind===state.kind));}
  }catch(_){}
 }
 function saveForm(){
  const values={kind:state.kind};FIELDS.forEach(id=>{const e=$(id);values[id]=e.type==="checkbox"?e.checked:e.value;});
- try{localStorage.setItem("escapade_preferences_v1",JSON.stringify(values));}catch(_){}
+ try{localStorage.setItem("escapade_preferences_v2",JSON.stringify(values));}catch(_){}
 }
 function formData(){
  return {checkin:$("checkin").value,checkout:$("checkout").value,adults:Number($("adults").value)||2,
@@ -56,7 +58,7 @@ function bookingURL(item){
  return "https://www.booking.com/searchresults.fr.html?"+q.toString();
 }
 function airbnbURL(){
- const place=state.place||$("destination").value||"Europe";
+ const place=state.place||$("destination").value||($("country").value?$("country").selectedOptions[0].text:"Monde entier");
  const q=new URLSearchParams({checkin:$("checkin").value,checkout:$("checkout").value,adults:String(formData().adults)});
  return "https://www.airbnb.fr/s/"+encodeURIComponent(place)+"/homes?"+q.toString();
 }
@@ -95,6 +97,138 @@ function popup(item){
  link(item.kind==="rental"?airbnbURL():bookingURL(item),item.kind==="rental"?"Recherche Airbnb ↗":"Recherche Booking ↗")+
  (formData().flight?link(packageURL(),"Vol + hébergement ↗"):"")+'</div>';
 }
+
+function countryLabel(code){
+ const display = new Intl.DisplayNames(["fr"],{type:"region"});
+ try{return display.of(code)||code;}catch(_){return code;}
+}
+function setupCountries(){
+ const select=$("country");
+ const display = new Intl.DisplayNames(["fr"],{type:"region"});
+ const entries=[];
+ for(let a=65;a<=90;a++)for(let b=65;b<=90;b++){
+  const code=String.fromCharCode(a,b);
+  const label=display.of(code);
+  if(label&&label!==code&&!/^((code)|région inconnue)/i.test(label))entries.push({code,label});
+ }
+ entries.push({code:"XK",label:"Kosovo"});
+ entries.sort((a,b)=>a.label.localeCompare(b.label,"fr"));
+ entries.forEach(({code,label})=>{
+  const opt=document.createElement("option");opt.value=code;opt.textContent=label;select.appendChild(opt);
+ });
+}
+function chosenHubs(){
+ const code=$("country").value;
+ return code?HUBS.filter(h=>h.country===code):HUBS;
+}
+function boundsFor(hubs){
+ if(!hubs.length)return;
+ if(hubs.length===1)map.setView([hubs[0].lat,hubs[0].lon],7);
+ else map.fitBounds(hubs.map(h=>[h.lat,h.lon]),{padding:[35,35],maxZoom:7});
+}
+function showHubs(){
+ hubLayers.clearLayers();
+ const hubs=chosenHubs();
+ for(const h of hubs){
+  const mark=L.circleMarker([h.lat,h.lon],{radius:5.6,weight:1.5,color:"#ffffff",fillColor:"#f1ab56",fillOpacity:.9,opacity:.95});
+  mark.bindTooltip(h.name,{direction:"top"});
+  mark.on("click",()=>visitHub(h));
+  mark.addTo(hubLayers);
+ }
+ return hubs;
+}
+function renderHubCards(hubs){
+ const list=$("results");
+ list.replaceChildren();
+ if(!hubs.length){
+  list.innerHTML='<div class="blank"><span>⌖</span><strong>Aucun point d’accès préchargé pour ce pays.</strong><p>Déplacez la carte sur une ville puis cliquez sur « Chercher autour de la carte ».</p></div>';
+  return;
+ }
+ const frag=document.createDocumentFragment();
+ hubs.forEach(h=>{
+  const card=document.createElement("article");
+  card.className="result hub-result";card.tabIndex=0;
+  card.innerHTML='<div class="resulttop"><div><h4>'+esc(h.name)+'</h4><div class="mini">'+esc(countryLabel(h.country))+'</div></div><span class="pill">Zone à explorer</span></div><div class="line">Cliquer pour rechercher des hébergements réels autour de ce point. Ce repère n’est pas une offre.</div>';
+  const go=()=>visitHub(h);
+  card.addEventListener("click",go);card.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+  frag.appendChild(card);
+ });
+ list.appendChild(frag);
+}
+async function visitHub(h){
+ if(state.loading)return;
+ state.center={lat:h.lat,lon:h.lon};
+ state.place=h.name+", "+countryLabel(h.country);
+ map.setView([h.lat,h.lon],11);
+ state.items=[];
+ render();
+ await loadPlaces(false);
+}
+async function showCountryFallback(code){
+ if(!code)return;
+ try{
+  const resp=await fetch("https://restcountries.com/v3.1/alpha/"+encodeURIComponent(code)+"?fields=latlng,capitalInfo",{signal:AbortSignal.timeout(10000)});
+  if(!resp.ok)throw Error("géolocalisation indisponible");
+  const data=await resp.json();
+  const location=data.capitalInfo?.latlng||data.latlng;
+  if(!Array.isArray(location)||location.length<2)throw Error("localisation indisponible");
+  map.setView(location,6);
+  setStatus("Pays sélectionné. Déplacez la carte vers une ville, puis cliquez sur « Chercher autour de la carte ».","ok");
+ }catch(_){setStatus("Pays choisi. Explorez librement la carte puis lancez une recherche dans la zone.","ok");}
+}
+function setCountryView(){
+ state.items=[];state.center=null;state.worldSample=false;state.place="";
+ const hubs=showHubs();
+ if($("country").value){
+  if(hubs.length)boundsFor(hubs);
+  else showCountryFallback($("country").value);
+  setStatus("Pays : "+$("country").selectedOptions[0].text+" · Choisissez une zone à explorer.","ok");
+ }else{
+  map.setView([20,0],2);
+  setStatus("Monde entier : choisissez un point orange, ou lancez « Explorer le monde ».","ok");
+ }
+ render();
+}
+async function loadGlobalSample(){
+ if(state.loading||state.globalLoading)return;
+ state.globalLoading=true;
+ setStatus("Recherche d’un échantillon de vrais hébergements sur plusieurs continents…","busy");
+ const points=["Palma de Majorque","Agadir","Zanzibar","Dubaï","Phuket","Bali — Denpasar","Sydney","Honolulu","Cancún","Punta Cana","Cartagena","Rio de Janeiro","Port Louis","Rhodes","Nadi","Tokyo"];
+ const chosen=points.map(name=>HUBS.find(h=>h.name===name)).filter(Boolean);
+ const kind="hotel|motel|resort|camp_site|caravan_site|apartment|chalet|guest_house|hostel|wilderness_hut|holiday_village";
+ const key="escapade_world_samples_v1";
+ try{
+  const cached=JSON.parse(localStorage.getItem(key)||"null");
+  if(cached&&Date.now()-cached.time<24*3600000&&Array.isArray(cached.items)){
+   state.items=cached.items;state.worldSample=true;state.lastUpdate=cached.time;state.place="Échantillon mondial (16 secteurs)";render();
+   setStatus(state.items.length+" établissements réels dans 16 zones. Échantillon mondial, non exhaustif. Les prix ne sont pas vérifiés.","ok");
+   $("updateTime").textContent="Collecte : "+new Date(cached.time).toLocaleString("fr-FR");return;
+  }
+ }catch(_){}
+ try{
+  const queries=chosen.map(h=>'nwr["tourism"~"^('+kind+')$"](around:9000,'+h.lat+','+h.lon+');out center 15;').join("");
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),55000);
+  let response;
+  try{response=await fetch("https://overpass-api.de/api/interpreter",{method:"POST",body:new URLSearchParams({data:"[out:json][timeout:50];"+queries}),signal:controller.signal});}
+  finally{clearTimeout(timer);}
+  if(!response.ok)throw Error("HTTP "+response.status);
+  const data=await response.json();
+  if(!Array.isArray(data.elements))throw Error("données manquantes");
+  const items=new Map();
+  data.elements.map(normalize).filter(Boolean).forEach(v=>items.set(v.type+"/"+v.id,v));
+  state.items=[...items.values()];state.worldSample=true;state.lastUpdate=Date.now();
+  try{localStorage.setItem(key,JSON.stringify({time:state.lastUpdate,items:state.items}));}catch(_){}
+  state.place="Échantillon mondial (16 secteurs)";
+  render();
+  setStatus(state.items.length+" hébergements dans 16 secteurs du monde. Catalogue partiel : tarifs et disponibilités inconnus.","ok");
+  $("updateTime").textContent="Collecte : "+new Date(state.lastUpdate).toLocaleString("fr-FR");
+ }catch(e){
+  setStatus("Échantillon mondial indisponible pour le moment. Les points orange restent utilisables : choisissez une zone pour y chercher des établissements.","error");
+  render();
+ }finally{state.globalLoading=false;}
+}
+
 function filtered(){
  const f=formData();
  return state.items.filter(item=>(state.kind==="all"||item.kind===state.kind)&&(!f.stars||item.stars==null||item.stars>=f.stars))
@@ -103,14 +237,12 @@ function filtered(){
 function render(){
  layers.clearLayers();state.pins.clear();
  const items=filtered();
+ const hubs=showHubs();
  $("mappedCount").textContent=state.items.length;
  $("filteredCount").textContent=items.length;
- $("resultsSub").textContent=state.place?state.place+" · "+items.length+" lieu(x)":"Choisissez une destination";
+ $("resultsSub").textContent=state.place?state.place+" · "+items.length+" lieu(x)":"Monde entier · "+hubs.length+" zones à parcourir";
  const list=$("results");list.replaceChildren();
- if(!state.items.length){
- list.innerHTML='<div class="blank"><span>⌖</span><strong>Aucune adresse chargée.</strong><p>Recherchez une ville ou déplacez la carte et cliquez sur « Rechercher dans cette zone ».</p></div>';
- return;
- }
+ if(!state.items.length){renderHubCards(hubs);return;}
  if(!items.length){
  list.innerHTML='<div class="blank"><span>⌖</span><strong>Aucun établissement pour ce type.</strong><p>Essayez « Tous » ou choisissez un autre nombre d’étoiles.</p></div>';return;
  }
@@ -196,13 +328,20 @@ async function loadPlaces(force=false){
 }
 async function runSearch(){
  if(state.loading||!validate())return;
- const query=$("destination").value.trim();if(!query){setStatus("Indiquez une destination.","error");return;}
- saveForm();setBusy(true);
+ const query=$("destination").value.trim();
+ saveForm();
+ if(!query){
+  setCountryView();
+  if(!$("country").value)await loadGlobalSample();
+  return;
+ }
+ setBusy(true);
  try{
  const place=await geoSearch(query);
  const center={lat:place.latitude,lon:place.longitude};
  state.center=center;
  state.place=[place.name,place.country].filter(Boolean).join(", ");
+ $("country").value="";
  const zoom=formData().radius>=55000?9:formData().radius>=35000?10:formData().radius>=25000?11:12;
  map.setView([center.lat,center.lon],zoom);
  }catch(error){setStatus(error.name==="AbortError"?"Géolocalisation trop lente.":error.message,"error");setBusy(false);return;}
@@ -217,21 +356,23 @@ function chooseKind(kind){
 }
 document.querySelectorAll(".category").forEach(btn=>btn.addEventListener("click",()=>chooseKind(btn.dataset.kind)));
 $("searchForm").addEventListener("submit",event=>{event.preventDefault();runSearch();});
-$("loadHere").addEventListener("click",()=>{const c=map.getCenter();state.center={lat:c.lat,lon:c.lng};state.place="zone de carte ("+c.lat.toFixed(2)+", "+c.lng.toFixed(2)+")";saveForm();loadPlaces(false);});
-$("refresh").addEventListener("click",()=>{if(state.center)loadPlaces(true);else setStatus("Sélectionnez une destination ou une zone.","error");});
+$("loadHere").addEventListener("click",()=>{const c=map.getCenter();state.center={lat:c.lat,lon:c.lng};state.place="zone de carte ("+c.lat.toFixed(2)+", "+c.lng.toFixed(2)+")";state.items=[];saveForm();loadPlaces(false);});
+$("refresh").addEventListener("click",()=>{if(state.center)loadPlaces(true);else if(!$("country").value)loadGlobalSample();else setStatus("Cliquez sur une zone du pays pour actualiser les établissements.","error");});
 $("sort").addEventListener("change",render);
+$("country").addEventListener("change",()=>{if(state.loading)return;$("destination").value="";saveForm();setCountryView();});
 FIELDS.forEach(id=>{
  const el=$(id);
  el.addEventListener("change",()=>{saveForm();if(state.items.length)render();});
 });
 $("resetBtn").addEventListener("click",()=>{
- try{localStorage.removeItem("escapade_preferences_v1");}catch(_){}
+ try{localStorage.removeItem("escapade_preferences_v2");}catch(_){}
  $("searchForm").reset();
- $("destination").value="Palerme";$("checkin").value="2027-08-10";$("checkout").value="2027-08-17";
+ $("destination").value="";$("country").value="";$("checkin").value="2027-08-10";$("checkout").value="2027-08-17";
  $("adults").value="2";$("budget").value="1100";$("radius").value="35000";$("stars").value="4";
  $("board").value="all";$("airport").value="PAR";$("flight").checked=true;$("beach").checked=true;
- chooseKind("hotel");setStatus("Filtres réinitialisés. Relancez la recherche.","ok");
+ chooseKind("hotel");setCountryView();
 });
 setInterval(()=>{if(document.visibilityState==="visible"&&state.center&&!state.loading&&state.lastUpdate&&Date.now()-state.lastUpdate>=60*60*1000)loadPlaces(true);},60000);
-savedForm();chooseKind(state.kind);
+setupCountries();savedForm();chooseKind(state.kind);
+setCountryView();
 })();
