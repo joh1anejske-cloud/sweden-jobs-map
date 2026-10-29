@@ -11,3 +11,32 @@
 .disclosure{border-top:1px solid #e8efe9;padding:18px 23px;background:#fafcfb}.disclosure strong{font-size:12px;color:#415b4c}.disclosure p{font-size:11px;line-height:1.75;color:#809388;margin:6px 0 0}footer{padding:22px 0 35px;display:flex;justify-content:space-between;gap:15px;font-size:11px;color:#91a398}
 @media(max-width:1150px){.filtergrid{grid-template-columns:repeat(4,minmax(0,1fr))}.field.wide{grid-column:span 2}.categories{gap:7px}.category{grid-template-columns:1fr;grid-template-rows:auto auto auto;text-align:center;justify-items:center}.emoji{grid-row:auto}.workspace{grid-template-columns:1.35fr 1fr}.actions #criteriaInfo{margin-left:0}}
 @media(max-width:720px){.top{height:65px;padding:0 16px}.headlinks a{display:none}.live-indicator{font-size:10px}.main{padding:0 12px}.intro{padding:28px 6px 22px}.intro-mark{display:none}.intro h1{font-size:29px}.planner{padding:16px 13px}.categories{display:flex;overflow-x:auto;padding-bottom:4px}.category{flex:0 0 118px;padding:10px 5px}.filtergrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.field.wide{grid-column:span 2}.options{gap:13px}.actions button.primary{width:100%}.explorehead{align-items:flex-start;flex-direction:column;padding:15px}.mapactions{width:100%}.mapactions button{flex:1}.statusbar{padding:9px 12px;align-items:flex-start}.statusbar>span{display:none}.workspace{display:flex;flex-direction:column;height:auto}.mapwrap{height:380px}.results{height:460px;border-left:0;border-top:1px solid #e5ece7}.mapbadge{left:8px;top:8px}.maplegend{left:8px;bottom:8px}.disclosure{padding:16px}footer{flex-direction:column}}
+
+/* Verified quote panel. Prices are shown only from a configured and authenticated backend. */
+.quotes{margin:20px 0;background:#fff;border:1px solid #e2ebe4;border-radius:20px;padding:23px 25px;box-shadow:0 5px 25px #244e3c08}
+.quotes-intro{color:#748b80;font-size:12px;line-height:1.65;margin:12px 0 16px}
+.quote-banner{background:#fff9eb;border:1px solid #efdcaf;display:flex;align-items:center;gap:13px;border-radius:11px;padding:13px 15px}
+.quote-banner.live{background:#ecf8f0;border-color:#a5d8b8}.quote-banner.error{background:#fff0ed;border-color:#f2c2b8}
+.quote-led{flex-shrink:0;width:11px;height:11px;border-radius:100%;background:#dda640}.quote-banner.live .quote-led{background:#29a579}.quote-banner.error .quote-led{background:#da735b}
+.quote-banner strong{display:block;color:#355347;font-size:12px}
+.quote-banner small{display:block;margin-top:4px;color:#84978d;font-size:11px;line-height:1.5}
+.quote-controls{display:flex;gap:14px;align-items:center;margin-top:16px}
+.quote-controls .primary:disabled{opacity:.7;cursor:wait}
+.quote-hint{color:#758a81;font-size:11px;line-height:1.5}
+.quote-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;margin-top:15px}
+.quote-placeholder{grid-column:1/-1;background:#f7faf7;color:#7b9084;border-radius:9px;padding:17px;font-size:12px;line-height:1.55}
+.quote-placeholder strong{display:block;color:#466b57;margin-bottom:3px}
+.verified-card{border:1px solid #dceae1;border-radius:12px;padding:15px}
+.verified-card h4{font:800 13px/1.45 Manrope;margin:0}
+.verified-card .meta{margin:5px 0 9px;color:#789084;font-size:11px}
+.verified-card .amount{font:800 24px Manrope;color:#116952;margin-top:7px}
+.verified-card .amount small{font:600 11px 'DM Sans',sans-serif;color:#6c8978}
+.verified-card .details{font-size:11px;line-height:1.6;color:#617d6f;margin-top:10px}
+.verified-card .notpkg{color:#a07133;border-top:1px solid #e7ece6;margin-top:11px;padding-top:9px;font-size:10px}
+.verified-card .extlink{display:inline-block;margin-top:12px;text-decoration:none;color:#177d65;font-weight:800;font-size:11px}
+.quote-external{margin-top:17px;padding-top:15px;border-top:1px solid #e8eee8;font-size:12px;color:#466355}
+.quote-external>strong{font-size:11px}
+#externalSearches{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#externalSearches a{display:inline-block;padding:8px 11px;border:1px solid #d6e5dc;border-radius:8px;text-decoration:none;color:#23775f;font-size:11px;font-weight:700}
+#externalSearches a:hover{background:#eef8f1}
+@media(max-width:720px){.quotes{padding:17px 14px}.quote-controls{flex-direction:column;align-items:stretch}.quote-results{grid-template-columns:1fr}}
