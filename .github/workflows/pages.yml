@@ -35,8 +35,13 @@ jobs:
       - name: Refresh recent car data
         run: python3 scripts/update_cars.py
 
-      - name: Validate browser JavaScript
-        run: node --check app.js
+      - name: Validate JavaScript and vacation pricing tests
+        run: |
+          node --check app.js
+          node --check vacances/app.js
+          node --check vacances/offers.js
+          node --check api/offers.js
+          node --test vacances/tests/pricing.test.cjs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
