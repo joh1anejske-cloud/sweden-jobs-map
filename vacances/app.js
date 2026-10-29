@@ -6,7 +6,7 @@ const CATEGORY = {hotel:"Hôtel",camping:"Camping",rental:"Location",other:"Autr
 const TOURISM = {hotel:"hotel",motel:"hotel",resort:"hotel",camp_site:"camping",caravan_site:"camping",apartment:"rental",chalet:"rental",guest_house:"other",hostel:"other",wilderness_hut:"other",holiday_village:"other"};
 const FIELDS = ["country","destination","checkin","checkout","adults","budget","airport","radius","stars","board","flight","pool","beach","sea"];
 const HUBS=(window.ESCAPADE_HUBS||[]).map(([name,country,lat,lon])=>({name,country,lat,lon}));
-const state = {kind:"hotel",place:"",center:null,items:[],pins:new Map(),lastUpdate:null,loading:false,worldSample:false,country:"",globalLoading:false};
+const state = {kind:"hotel",place:"",center:null,items:[],pins:new Map(),lastUpdate:null,loading:false,worldSample:false,country:"",globalLoading:false,countryLoading:false,previewEpoch:0};
 const map = L.map("map",{worldCopyJump:true,zoomControl:true,minZoom:2}).setView([20,0],2);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -54,7 +54,7 @@ function validate(){
 }
 function osmURL(item){return "https://www.openstreetmap.org/"+item.type+"/"+item.id;}
 function bookingURL(item){
- const q = new URLSearchParams({ss:[item.name,state.place].filter(Boolean).join(", "),checkin:$("checkin").value,checkout:$("checkout").value,group_adults:String(formData().adults),no_rooms:"1",selected_currency:"EUR"});
+ const q = new URLSearchParams({ss:[item.name,item.location||state.place].filter(Boolean).join(", "),checkin:$("checkin").value,checkout:$("checkout").value,group_adults:String(formData().adults),no_rooms:"1",selected_currency:"EUR"});
  return "https://www.booking.com/searchresults.fr.html?"+q.toString();
 }
 function airbnbURL(){
@@ -157,6 +157,7 @@ function renderHubCards(hubs){
 }
 async function visitHub(h){
  if(state.loading)return;
+ state.previewEpoch++;
  state.center={lat:h.lat,lon:h.lon};
  state.place=h.name+", "+countryLabel(h.country);
  map.setView([h.lat,h.lon],11);
@@ -173,10 +174,13 @@ async function showCountryFallback(code){
   const location=data.capitalInfo?.latlng||data.latlng;
   if(!Array.isArray(location)||location.length<2)throw Error("localisation indisponible");
   map.setView(location,6);
+  state.center={lat:location[0],lon:location[1]};
+  state.place=$("country").selectedOptions[0].text+" (centre du pays)";
   setStatus("Pays sélectionné. Déplacez la carte vers une ville, puis cliquez sur « Chercher autour de la carte ».","ok");
  }catch(_){setStatus("Pays choisi. Explorez librement la carte puis lancez une recherche dans la zone.","ok");}
 }
 function setCountryView(){
+ state.previewEpoch++;
  state.items=[];state.center=null;state.worldSample=false;state.place="";
  const hubs=showHubs();
  if($("country").value){
@@ -189,9 +193,63 @@ function setCountryView(){
  }
  render();
 }
+
+async function loadCountrySample(){
+ const code=$("country").value;
+ if(!code||state.countryLoading||state.loading)return;
+ const epoch=state.previewEpoch;
+ const hubs=chosenHubs();
+ if(!hubs.length){
+  if(!state.center)await showCountryFallback(code);
+  if(state.center&&state.previewEpoch===epoch)await loadPlaces(false);
+  return;
+ }
+ state.countryLoading=true;
+ const name=$("country").selectedOptions[0].text;
+ setStatus("Recherche d’hébergements dans plusieurs zones de "+name+"…","busy");
+ const selected=hubs.slice(0,7),cache="escapade_country_v1_"+code;
+ try{
+  try{
+   const c=JSON.parse(localStorage.getItem(cache)||"null");
+   if(c&&Date.now()-c.time<24*3600000&&Array.isArray(c.items)){
+    if(epoch!==state.previewEpoch)return;
+    state.items=c.items;state.lastUpdate=c.time;state.place=name+" · aperçu de "+selected.length+" zones";
+    render();setStatus(state.items.length+" hébergements dans "+selected.length+" zones. Tarifs et disponibilités non vérifiés.","ok");
+    $("updateTime").textContent="Collecte : "+new Date(c.time).toLocaleString("fr-FR");
+    return;
+   }
+  }catch(_){}
+  const kinds="hotel|motel|resort|camp_site|caravan_site|apartment|chalet|guest_house|hostel|wilderness_hut|holiday_village";
+  const query="[out:json][timeout:45];"+selected.map(h=>'nwr["tourism"~"^('+kinds+')$"](around:12000,'+h.lat+','+h.lon+');out center 30;').join("");
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
+  let response;
+  try{response=await fetch("https://overpass-api.de/api/interpreter",{method:"POST",body:new URLSearchParams({data:query}),signal:controller.signal});}
+  finally{clearTimeout(timer);}
+  if(!response.ok)throw Error("HTTP "+response.status);
+  const data=await response.json();if(!Array.isArray(data.elements))throw Error("Réponse incorrecte");
+  if(epoch!==state.previewEpoch)return;
+  const unique=new Map();
+  data.elements.map(normalize).filter(Boolean).forEach(item=>{
+   const nearest=selected.reduce((best,h)=>{
+    const d=Math.hypot((h.lat-item.lat)*111,(h.lon-item.lon)*111*Math.cos(item.lat*Math.PI/180));
+    return !best||d<best.distance?{h,distance:d}:best;
+   },null);
+   if(!item.location&&nearest)item.location=nearest.h.name+", "+name;
+   unique.set(item.type+"/"+item.id,item);
+  });
+  state.items=[...unique.values()];state.lastUpdate=Date.now();state.place=name+" · aperçu de "+selected.length+" zones";
+  try{localStorage.setItem(cache,JSON.stringify({time:state.lastUpdate,items:state.items}));}catch(_){}
+  render();setStatus(state.items.length+" hébergements dans "+selected.length+" zones du pays (aperçu non exhaustif).","ok");
+  $("updateTime").textContent="Collecte : "+new Date(state.lastUpdate).toLocaleString("fr-FR");
+ }catch(_){
+  if(epoch===state.previewEpoch){setStatus("Service de collecte indisponible. Cliquez sur un point orange pour chercher localement.","error");render();}
+ }finally{state.countryLoading=false;}
+}
+
 async function loadGlobalSample(){
  if(state.loading||state.globalLoading)return;
  state.globalLoading=true;
+ const epoch=state.previewEpoch;
  setStatus("Recherche d’un échantillon de vrais hébergements sur plusieurs continents…","busy");
  const points=["Palma de Majorque","Agadir","Zanzibar","Dubaï","Phuket","Bali — Denpasar","Sydney","Honolulu","Cancún","Punta Cana","Cartagena","Rio de Janeiro","Port Louis","Rhodes","Nadi","Tokyo"];
  const chosen=points.map(name=>HUBS.find(h=>h.name===name)).filter(Boolean);
@@ -200,6 +258,7 @@ async function loadGlobalSample(){
  try{
   const cached=JSON.parse(localStorage.getItem(key)||"null");
   if(cached&&Date.now()-cached.time<24*3600000&&Array.isArray(cached.items)){
+   if(epoch!==state.previewEpoch)return;
    state.items=cached.items;state.worldSample=true;state.lastUpdate=cached.time;state.place="Échantillon mondial (16 secteurs)";render();
    setStatus(state.items.length+" établissements réels dans 16 zones. Échantillon mondial, non exhaustif. Les prix ne sont pas vérifiés.","ok");
    $("updateTime").textContent="Collecte : "+new Date(cached.time).toLocaleString("fr-FR");return;
@@ -215,8 +274,16 @@ async function loadGlobalSample(){
   if(!response.ok)throw Error("HTTP "+response.status);
   const data=await response.json();
   if(!Array.isArray(data.elements))throw Error("données manquantes");
+  if(epoch!==state.previewEpoch)return;
   const items=new Map();
-  data.elements.map(normalize).filter(Boolean).forEach(v=>items.set(v.type+"/"+v.id,v));
+  data.elements.map(normalize).filter(Boolean).forEach(v=>{
+   const nearest=chosen.reduce((best,h)=>{
+    const d=Math.hypot((h.lat-v.lat)*111,(h.lon-v.lon)*111*Math.cos(v.lat*Math.PI/180));
+    return !best||d<best.distance?{h,distance:d}:best;
+   },null);
+   if(!v.location&&nearest)v.location=nearest.h.name+", "+countryLabel(nearest.h.country);
+   items.set(v.type+"/"+v.id,v);
+  });
   state.items=[...items.values()];state.worldSample=true;state.lastUpdate=Date.now();
   try{localStorage.setItem(key,JSON.stringify({time:state.lastUpdate,items:state.items}));}catch(_){}
   state.place="Échantillon mondial (16 secteurs)";
@@ -224,6 +291,7 @@ async function loadGlobalSample(){
   setStatus(state.items.length+" hébergements dans 16 secteurs du monde. Catalogue partiel : tarifs et disponibilités inconnus.","ok");
   $("updateTime").textContent="Collecte : "+new Date(state.lastUpdate).toLocaleString("fr-FR");
  }catch(e){
+  if(epoch!==state.previewEpoch)return;
   setStatus("Échantillon mondial indisponible pour le moment. Les points orange restent utilisables : choisissez une zone pour y chercher des établissements.","error");
   render();
  }finally{state.globalLoading=false;}
@@ -314,7 +382,7 @@ async function loadPlaces(force=false){
  if(!Array.isArray(data.elements))throw new Error("Réponse cartographique incomplète.");
  const entries=data.elements.map(normalize).filter(Boolean);
  const unique=new Map();
- entries.forEach(v=>{unique.set(v.type+"/"+v.id,v);});
+ entries.forEach(v=>{if(!v.location)v.location=state.place;unique.set(v.type+"/"+v.id,v);});
  state.items=[...unique.values()];
  state.lastUpdate=Date.now();
  writeCache(key,state.items);
@@ -333,6 +401,7 @@ async function runSearch(){
  if(!query){
   setCountryView();
   if(!$("country").value)await loadGlobalSample();
+  else await loadCountrySample();
   return;
  }
  setBusy(true);
@@ -356,10 +425,10 @@ function chooseKind(kind){
 }
 document.querySelectorAll(".category").forEach(btn=>btn.addEventListener("click",()=>chooseKind(btn.dataset.kind)));
 $("searchForm").addEventListener("submit",event=>{event.preventDefault();runSearch();});
-$("loadHere").addEventListener("click",()=>{const c=map.getCenter();state.center={lat:c.lat,lon:c.lng};state.place="zone de carte ("+c.lat.toFixed(2)+", "+c.lng.toFixed(2)+")";state.items=[];saveForm();loadPlaces(false);});
+$("loadHere").addEventListener("click",()=>{const c=map.getCenter();state.center={lat:c.lat,lon:c.lng};state.place="zone de carte ("+c.lat.toFixed(2)+", "+c.lng.toFixed(2)+")";state.items=[];state.previewEpoch++;saveForm();loadPlaces(false);});
 $("refresh").addEventListener("click",()=>{if(state.center)loadPlaces(true);else if(!$("country").value)loadGlobalSample();else setStatus("Cliquez sur une zone du pays pour actualiser les établissements.","error");});
 $("sort").addEventListener("change",render);
-$("country").addEventListener("change",()=>{if(state.loading)return;$("destination").value="";saveForm();setCountryView();});
+$("country").addEventListener("change",()=>{if(state.loading)return;$("destination").value="";saveForm();setCountryView();if($("country").value)loadCountrySample();});
 FIELDS.forEach(id=>{
  const el=$(id);
  el.addEventListener("change",()=>{saveForm();if(state.items.length)render();});
@@ -375,4 +444,5 @@ $("resetBtn").addEventListener("click",()=>{
 setInterval(()=>{if(document.visibilityState==="visible"&&state.center&&!state.loading&&state.lastUpdate&&Date.now()-state.lastUpdate>=60*60*1000)loadPlaces(true);},60000);
 setupCountries();savedForm();chooseKind(state.kind);
 setCountryView();
+if($("country").value)loadCountrySample();
 })();
