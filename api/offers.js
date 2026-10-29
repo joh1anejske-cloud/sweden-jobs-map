@@ -5,7 +5,7 @@
  * Never return provider credentials or raw supplier offers to the browser.
  * Flight prices and packages are explicitly NOT verified by this adapter.
  */
-const https = require('node:https');
+const crypto = require('node:crypto');
 const BOARD = Object.freeze({all:['AI','TI','AI1','AI2','AI3'],half:['HB','HB1','HB2','HB3'],full:['FB','FB1','FB2','FB3'],breakfast:['BB','BB1','BB2','BB3','BI'],none:['RO']});
 const allowedOrigin = (origin) =>
   /^https:\/\/joh1anejske-cloud\.github\.io$/.test(origin||'') ||
@@ -96,11 +96,18 @@ async function handler(req,res){
   res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method==='OPTIONS'){
     res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers','Content-Type');
+    res.setHeader('Access-Control-Allow-Headers','Content-Type, X-Escapade-Access');
     return res.status(204).end();
   }
   if(req.method!=='POST')return res.status(405).json({error:'METHOD_NOT_ALLOWED'});
   if(origin&&!allowedOrigin(origin))return res.status(403).json({error:'ORIGIN_DENIED'});
+  // Protect a potentially billable supplier quota. Browser origin alone is not authentication.
+  const requiredPin=process.env.ESCAPADE_ACCESS_PIN||'';
+  if(!requiredPin||requiredPin.length<12)return res.status(503).json({error:'ACCESS_NOT_CONFIGURED',message:'Un code d’accès privé de 12 caractères minimum doit être configuré sur le serveur.'});
+  const givenPin=String(req.headers?.['x-escapade-access']||'');
+  const a=crypto.createHash('sha256').update(givenPin).digest();
+  const b=crypto.createHash('sha256').update(requiredPin).digest();
+  if(!crypto.timingSafeEqual(a,b))return res.status(401).json({error:'ACCESS_DENIED',message:'Code d’accès aux tarifs manquant ou incorrect.'});
   if(!process.env.LITEAPI_KEY)return res.status(503).json({error:'PROVIDER_NOT_CONFIGURED',message:'Clé LiteAPI de production manquante sur le serveur.'});
   if(process.env.LITEAPI_PRODUCTION!=='true')return res.status(503).json({error:'PRODUCTION_NOT_ENABLED',message:'Environnement de production non activé. Aucun tarif sandbox ne sera présenté comme réel.'});
   const input=typeof req.body==='string'?JSON.parse(req.body||'{}'):req.body||{};
