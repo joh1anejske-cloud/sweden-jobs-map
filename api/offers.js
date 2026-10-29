@@ -13,7 +13,7 @@ const allowedOrigin = (origin) =>
   (process.env.ESCAPADE_SITE_ORIGIN && origin===process.env.ESCAPADE_SITE_ORIGIN);
 const isDate = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v+'T00:00:00Z'));
 const finite = (v) => typeof v==='number' && Number.isFinite(v);
-const money = v => v&&finite(Number(v.amount))&&String(v.currency||'').toUpperCase()==='EUR'?Number(v.amount):null;
+const money = v => v&&finite(v.amount)&&String(v.currency||'').toUpperCase()==='EUR'?v.amount:null;
 function totalFromOffer(offer,rate) {
   const ssp=offer.suggestedSellingPrice;
   const retail=offer.offerRetailRate;
