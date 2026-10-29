@@ -30,12 +30,18 @@ const travelSearch=place=>{
 };
 function external(){
  const filters=f(),label=$("country").selectedOptions[0]?.text||"Monde entier";
- const place=filters.destination|| (filters.country?label:"vacances monde entier");
- const links=[
-  ["Booking · hôtels",officialBooking(place)],
-  ["Airbnb · locations",officialAirbnb(place)],
-  ["Vol + hôtel · recherches",travelSearch(place)]
- ];
+ const choices=filters.destination?[filters.destination]:
+   (filters.country?HUBS.filter(h=>h.country===filters.country).slice(0,3).map(h=>h.name):WORLD.map(h=>h.name));
+ const places=choices.length?choices:[label];
+ const links=[];
+ for(const place of places){
+  links.push(["Hôtels · "+place,officialBooking(place)]);
+  links.push(["Locations · "+place,officialAirbnb(place)]);
+  links.push(["Vol + hôtel · "+place,travelSearch(place)]);
+ }
+ if($("board").value==="all"){
+  links.push(["Tout compris · comparer",travelSearch(places[0])]);
+ }
  const root=$("externalSearches");
  root.replaceChildren();
  links.forEach(([name,url])=>{
@@ -107,6 +113,8 @@ async function search(){
   $("quoteResults").innerHTML='<div class="quote-placeholder"><strong>La vérification tarifaire automatique est indisponible.</strong> Utilisez les liens Booking et Airbnb ci-dessous pour consulter directement les prix et disponibilités aux dates choisies. Aucune offre n’est présentée comme vérifiée.</div>';
   return;
  }
+ const pin=$("quotePin").value;
+ if(pin.length<12){status("Code d'accès requis","Saisissez votre code personnel de 12 caractères minimum configuré sur le serveur.","error");return;}
  button.disabled=true;button.textContent="Recherche de vrais tarifs en cours…";
  status("Interrogation des tarifs de production…","Jusqu’à quatre zones sont consultées, ce n’est pas un inventaire mondial complet.","live");
  try{
@@ -114,7 +122,7 @@ async function search(){
   if(params.destination)targets=[await geocode(params.destination)];
   if(!targets.length){status("Aucun centre de recherche","Déplacez la carte vers un pays ou précisez une ville.","error");return;}
   const response=await fetch(PRICE_ENDPOINT,{
-   method:"POST",headers:{"Content-Type":"application/json"},
+   method:"POST",headers:{"Content-Type":"application/json","X-Escapade-Access":pin},
    body:JSON.stringify({checkin:params.checkin,checkout:params.checkout,adults:params.adults,budget:params.budget,
      minStars:params.minStars,board:params.board,flight:params.flight,radius:Math.min(params.radius,35000),locations:targets})
   });
@@ -137,6 +145,7 @@ $("quoteSearch").addEventListener("click",search);
  const input=$(id);input.addEventListener("change",external);
 });
 external();
+$("quotePinWrap").style.display=PRICE_ENDPOINT?"flex":"none";
 if(!PRICE_ENDPOINT){
  status("Recherche de prix : connexion fournisseur nécessaire",
  "Le site GitHub Pages n'a pas d'accès privé aux tarifs de réservation. Les liens externes fonctionnent dès maintenant.","");
