@@ -114,7 +114,9 @@ async function handler(req,res){
   if(!crypto.timingSafeEqual(a,b))return res.status(401).json({error:'ACCESS_DENIED',message:'Code d’accès aux tarifs manquant ou incorrect.'});
   if(!process.env.LITEAPI_KEY)return res.status(503).json({error:'PROVIDER_NOT_CONFIGURED',message:'Clé LiteAPI de production manquante sur le serveur.'});
   if(process.env.LITEAPI_PRODUCTION!=='true')return res.status(503).json({error:'PRODUCTION_NOT_ENABLED',message:'Environnement de production non activé. Aucun tarif sandbox ne sera présenté comme réel.'});
-  const input=typeof req.body==='string'?JSON.parse(req.body||'{}'):req.body||{};
+  let input;
+  try{input=typeof req.body==='string'?JSON.parse(req.body||'{}'):req.body||{};}
+  catch(_){return res.status(400).json({error:'INVALID_JSON'});}
   const checkin=input.checkin,checkout=input.checkout,adults=Number(input.adults),board=String(input.board||'any');
   const minStars=Number(input.minStars||0),budget=Number(input.budget||0),flight=Boolean(input.flight);
   const locations=Array.isArray(input.locations)?input.locations:[];
