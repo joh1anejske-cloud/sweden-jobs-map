@@ -442,6 +442,21 @@ $("resetBtn").addEventListener("click",()=>{
  chooseKind("hotel");setCountryView();
 });
 setInterval(()=>{if(document.visibilityState==="visible"&&state.center&&!state.loading&&state.lastUpdate&&Date.now()-state.lastUpdate>=60*60*1000)loadPlaces(true);},60000);
+const priceMarkers=L.layerGroup().addTo(map);
+window.ESCAPADE_BRIDGE={
+ getSearchCenter:()=>state.center?{...state.center}:null,
+ showQuotes:(items)=>{
+  priceMarkers.clearLayers();
+  for(const h of items){
+   if(typeof h.lat!=="number"||typeof h.lon!=="number")continue;
+   const icon=L.divIcon({className:"",html:'<span class="marker" style="background:#b2751e;width:25px;height:25px;border-radius:7px;border:3px solid white;display:block"></span>',iconSize:[25,25],iconAnchor:[12,12]});
+   const content='<div class="popup-title">'+esc(h.name)+'</div><div class="popup-detail">Tarif hôtel : '+esc(new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(h.offer?.pp||0))+' / personne<br>Vol exclu · revalidation nécessaire</div>';
+   L.marker([h.lat,h.lon],{icon}).bindPopup(content).addTo(priceMarkers);
+  }
+ },
+ focusQuote:(lat,lon)=>{map.setView([lat,lon],13);},
+ clearQuotes:()=>priceMarkers.clearLayers()
+};
 setupCountries();savedForm();chooseKind(state.kind);
 setCountryView();
 if($("country").value)loadCountrySample();
