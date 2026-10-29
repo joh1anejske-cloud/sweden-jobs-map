@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f8f6">
+<title>Escapade — Explorer les vacances sur la carte</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="brandmark">✳</span><div><strong>ESCAPADE</strong><small>Le monde, vos prochaines vacances</small></div></div>
+  <div class="headlinks"><a href="../" title="Revenir à la carte Suède">Carte Suède</a><span class="live-indicator"><i></i> Exploration mondiale</span></div>
+</header>
+<main class="main">
+ <section class="intro"><div><span class="eyebrow">Votre comparateur visuel de séjours</span><h1>Les vacances commencent <em>sur la carte.</em></h1><p>Explorez des hôtels, campings et locations partout dans le monde. Repérez les adresses, vérifiez leurs informations et ouvrez directement la source.</p></div><div class="intro-mark"><span>01</span><p>CHOISIR<br>EXPLORER<br>PARTIR</p></div></section>
+ <section class="planner">
+  <div class="titleline"><span>01</span><h2>Quel hébergement recherchez-vous ?</h2></div>
+  <div class="categories" role="group" aria-label="Types d'hébergement">
+    <button class="category active" data-kind="hotel"><span class="emoji">▤</span><b>Hôtels</b><small>Hôtel · complexe</small></button>
+    <button class="category" data-kind="camping"><span class="emoji">△</span><b>Campings</b><small>Camping · caravaning</small></button>
+    <button class="category" data-kind="rental"><span class="emoji">⌂</span><b>Locations</b><small>Appartement · villa · chalet</small></button>
+    <button class="category" data-kind="other"><span class="emoji">✦</span><b>Autres</b><small>Auberge · maison d'hôtes</small></button>
+    <button class="category all" data-kind="all"><span class="emoji">◎</span><b>Tous</b><small>Tout afficher</small></button>
+  </div>
+  <form id="searchForm" autocomplete="off">
+   <div class="filtergrid">
+    <label class="field wide"><span>Destination (monde entier)</span><input id="destination" type="search" placeholder="Ex. : Palerme, Rhodes, Marrakech, Bali…" value="Palerme" required><small>Rechercher une ville, une île ou une région reconnue</small></label>
+    <label class="field"><span>Arrivée</span><input id="checkin" type="date" value="2027-08-10" required></label>
+    <label class="field"><span>Départ</span><input id="checkout" type="date" value="2027-08-17" required></label>
+    <label class="field"><span>Voyageurs</span><input id="adults" type="number" value="2" min="1" max="20" required></label>
+    <label class="field"><span>Budget max / personne (€)</span><input id="budget" type="number" value="1100" min="0" step="50" placeholder="Ex. 1100"></label>
+    <label class="field"><span>Départ du vol</span><select id="airport"><option value="PAR">Paris (tous aéroports)</option><option value="BVA">Paris-Beauvais</option><option value="CDG">Paris-CDG</option><option value="ORY">Paris-Orly</option><option value="">Sans préférence</option></select></label>
+    <label class="field"><span>Rayon cartographique</span><select id="radius"><option value="10000">10 km</option><option value="25000">25 km</option><option value="35000" selected>35 km</option><option value="55000">55 km</option></select></label>
+    <label class="field"><span>Étoiles minimum</span><select id="stars"><option value="0">Indifférent</option><option value="3">3 étoiles</option><option value="4" selected>4 étoiles</option><option value="5">5 étoiles</option></select></label>
+    <label class="field"><span>Formule souhaitée</span><select id="board"><option value="any">Indifférent</option><option value="all" selected>Tout compris / all inclusive</option><option value="full">Pension complète</option><option value="half">Demi-pension</option><option value="breakfast">Petit-déjeuner</option><option value="none">Sans repas</option></select></label>
+   </div>
+   <div class="options">
+    <label class="check"><input id="flight" type="checkbox" checked><span>Vol inclus dans le budget</span></label>
+    <label class="check"><input id="pool" type="checkbox"><span>Piscine souhaitée</span></label>
+    <label class="check"><input id="beach" type="checkbox" checked><span>Proche de la plage</span></label>
+    <label class="check"><input id="sea" type="checkbox"><span>Vue mer souhaitée</span></label>
+   </div>
+   <div class="actions"><button type="submit" class="primary" id="searchBtn">Rechercher et afficher sur la carte <span>↗</span></button><button type="button" class="secondary" id="resetBtn">Réinitialiser</button><div id="criteriaInfo">Les préférences tarifaires ne sont confirmées que pour les offres disposant de données de réservation.</div></div>
+  </form>
+ </section>
+ <section class="explore">
+  <div class="explorehead"><div class="titleline"><span>02</span><h2>Explorer les résultats</h2></div><div class="mapactions"><button id="loadHere" class="secondary" title="Charger les hébergements autour du centre actuel de la carte">Rechercher dans cette zone</button><button id="refresh" class="secondary" title="Rafraîchir les données ouvertes de cette zone">Actualiser ↻</button></div></div>
+  <div class="statusbar"><div><span id="statusDot" class="state-dot"></span><strong id="status">Saisissez une destination puis lancez la recherche.</strong></div><span id="updateTime">Données : non chargées</span></div>
+  <div class="workspace">
+   <div class="mapwrap"><div id="map" aria-label="Carte interactive des hébergements mondiaux"></div><div class="mapbadge"><span id="mappedCount">0</span> établissements cartographiés <span class="sep">·</span> <span id="filteredCount">0</span> affichés</div><div class="maplegend"><i class="legend-dot"></i> Adresses réelles recensées par OpenStreetMap</div></div>
+   <aside class="results"><div class="resultsheader"><div><h3>Adresses repérées</h3><small id="resultsSub">Aucun lieu sélectionné</small></div><select id="sort" aria-label="Tri"><option value="name">Par nom</option><option value="stars">Étoiles renseignées</option></select></div><div id="results" class="cards"><div class="blank"><span>⌖</span><strong>Une carte à explorer.</strong><p>Recherchez une destination pour découvrir les établissements géolocalisés.</p></div></div></aside>
+  </div>
+  <div class="disclosure"><strong>À propos des résultats</strong><p>Les points correspondent à des établissements présents dans <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, et non à des chambres disponibles ou à des offres de réservation confirmées. Les étoiles, prix, avis, prestations, formules, vols et disponibilités peuvent être inconnus. Le budget et la formule restent des critères de recherche à contrôler sur le site du prestataire. Les annonces Airbnb individuelles ne sont pas accessibles via cette source. La carte consulte les données ouvertes à la demande et réactualise la zone toutes les heures tant que la page reste ouverte. Affichage non exhaustif.</p></div>
+ </section>
+ <footer><span>ESCAPADE · Carte mondiale des hébergements</span><span>Fond de carte © OpenStreetMap · Recherche de villes : Open-Meteo / GeoNames · Données : OpenStreetMap via Overpass</span></footer>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
