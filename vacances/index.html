@@ -46,8 +46,16 @@
    <div class="actions"><button type="submit" class="primary" id="searchBtn">Explorer le monde <span>↗</span></button><button type="button" class="secondary" id="resetBtn">Réinitialiser</button><div id="criteriaInfo">Les prix, la formule, les vols, la piscine et la plage ne peuvent pas être vérifiés avec la source cartographique actuelle.</div></div>
   </form>
  </section>
+ <section class="quotes" id="quoteSection" aria-label="Recherche de prix et disponibilités">
+  <div class="titleline"><span>02</span><h2>Prix et disponibilités pour vos dates</h2></div>
+  <p class="quotes-intro">Recherche de prix réels par <strong>Nuitee / LiteAPI</strong> lorsque le serveur fournisseur est activé. Les résultats hôteliers, les vols et les forfaits complets sont identifiés séparément.</p>
+  <div class="quote-banner" id="quoteBanner"><span class="quote-led"></span><div><strong id="quoteStatus">Connexion au fournisseur de tarifs non configurée</strong><small id="quoteSub">Les hôtels restent explorables sur la carte. Aucun tarif vérifié ne sera inventé.</small></div></div>
+  <div class="quote-controls"><button id="quoteSearch" type="button" class="primary">Vérifier les offres hôtelières <span>↗</span></button><div class="quote-hint" id="quoteHint">Avec « Vol inclus », les prix d’hôtel seuls ne sont pas comptabilisés comme des forfaits valides.</div></div>
+  <div class="quote-results" id="quoteResults"><div class="quote-placeholder"><strong>Aucun tarif vérifié affiché.</strong> Les recherches externes ci-dessous permettent de vérifier les disponibilités directement sur les sites marchands en attendant la connexion API.</div></div>
+  <div class="quote-external"><strong>Rechercher immédiatement sur les plateformes :</strong><div id="externalSearches"></div></div>
+ </section>
  <section class="explore">
-  <div class="explorehead"><div class="titleline"><span>02</span><h2>Explorer les résultats</h2></div><div class="mapactions"><button id="loadHere" class="secondary" title="Charger les hébergements autour du centre actuel de la carte">Chercher autour de la carte</button><button id="refresh" class="secondary" title="Rafraîchir les données ouvertes de cette zone">Actualiser ↻</button></div></div>
+  <div class="explorehead"><div class="titleline"><span>03</span><h2>Explorer les résultats sur la carte</h2></div><div class="mapactions"><button id="loadHere" class="secondary" title="Charger les hébergements autour du centre actuel de la carte">Chercher autour de la carte</button><button id="refresh" class="secondary" title="Rafraîchir les données ouvertes de cette zone">Actualiser ↻</button></div></div>
   <div class="statusbar"><div><span id="statusDot" class="state-dot"></span><strong id="status">Monde entier actif : cliquez sur une destination de la carte ou explorez un pays.</strong></div><span id="updateTime">Données : non chargées</span></div>
   <div class="workspace">
    <div class="mapwrap"><div id="map" aria-label="Carte interactive des hébergements mondiaux"></div><div class="mapbadge"><span id="mappedCount">0</span> établissements cartographiés <span class="sep">·</span> <span id="filteredCount">0</span> affichés</div><div class="maplegend"><i class="legend-dot"></i> Hébergements OpenStreetMap · points de navigation mondiale distincts</div></div>
@@ -60,5 +68,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./hubs.js"></script>
 <script src="./app.js"></script>
+<script src="./offers.js"></script>
 </body>
 </html>
