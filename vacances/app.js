@@ -261,7 +261,7 @@ async function loadGlobalSample(){
    if(epoch!==state.previewEpoch)return;
    state.items=cached.items;state.worldSample=true;state.lastUpdate=cached.time;state.place="Échantillon mondial (16 secteurs)";render();
    setStatus(state.items.length+" établissements réels dans 16 zones. Échantillon mondial, non exhaustif. Les prix ne sont pas vérifiés.","ok");
-   $("updateTime").textContent="Collecte : "+new Date(cached.time).toLocaleString("fr-FR");return;
+   $("updateTime").textContent="Collecte : "+new Date(cached.time).toLocaleString("fr-FR");state.globalLoading=false;return;
   }
  }catch(_){}
  try{
