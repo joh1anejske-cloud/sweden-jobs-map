@@ -19,7 +19,10 @@ function totalFromOffer(offer,rate) {
   const retail=offer.offerRetailRate;
   const ratePublic=rate.retailRate?.suggestedSellingPrice?.[0];
   const retailRate=rate.retailRate?.total?.[0];
-  const base=money(ssp)||money(ratePublic)||money(retail)||money(retailRate);
+  // Nuitee's documentation says a public display must use the supplier's
+  // Suggested Selling Price when provided. Do not expose a potentially
+  // private wholesale price as if it were a public booking offer.
+  const base=money(ssp)||money(ratePublic);
   if(base===null||base<=0)return null;
   let extras=0;
   for(const tax of (rate.retailRate?.taxesAndFees||[])){
@@ -85,6 +88,7 @@ async function getRates(payload,key){
     if(response.status===204)return [];
     if(!response.ok)throw Error('Fournisseur indisponible (HTTP '+response.status+').');
     const data=await response.json();
+    if(data.sandbox===true)throw Error('Tarifs de démonstration refusés : environnement sandbox détecté.');
     return Array.isArray(data.data)?data.data:[];
   }finally{clearTimeout(timeout);}
 }
